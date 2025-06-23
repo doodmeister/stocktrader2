@@ -300,7 +300,6 @@ stocktrader2/
 │   ├── data_validator.py             # ✅ Centralized validation with standalone functions
 │   ├── etrade_candlestick_bot.py     # Trading engine logic
 │   ├── etrade_client.py              # E*TRADE API client
-│   ├── exceptions.py                 # Custom application exceptions
 │   ├── risk_manager_v2.py            # Advanced risk management logic
 │   └── technical_indicators.py       # Core technical indicator calculations
 │
