@@ -302,7 +302,6 @@ stocktrader2/
 │   ├── etrade_client.py              # E*TRADE API client
 │   ├── exceptions.py                 # Custom application exceptions
 │   ├── risk_manager_v2.py            # Advanced risk management logic
-│   ├── safe_requests.py              # Wrapper for safe HTTP requests
 │   └── technical_indicators.py       # Core technical indicator calculations
 │
 ├── utils/                            # Utility modules

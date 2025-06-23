@@ -11,13 +11,12 @@ from dataclasses import dataclass
 from enum import Enum
 
 from core.etrade_client import ETradeClient, ETradeAuthenticationError, ETradeAPIError
-from security.etrade_security import SecureETradeManager, create_etrade_manager
+from security.etrade_security import create_etrade_manager
 from security.authorization import (
     check_etrade_access, 
     validate_etrade_environment_access,
     create_user_context,
-    Role,
-    UserContext
+    Role
 )
 from utils.logger import get_dashboard_logger
 
