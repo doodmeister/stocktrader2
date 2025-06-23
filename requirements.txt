@@ -36,6 +36,7 @@ matplotlib>=3.7.0
 # ===== HTTP REQUESTS =====
 requests>=2.31.0
 requests-oauthlib>=1.3.1
+rauth>=0.7.3  # For E*TRADE OAuth authentication
 
 # ===== SECURITY & AUTHENTICATION =====
 cryptography>=41.0.0
