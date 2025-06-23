@@ -87,7 +87,9 @@ class MarketDataService:
                 logger.info(f"Data saved to: {full_path}")
             
             # Prepare data preview (first 5 rows)
-            preview_data = data.head().to_dict('records')
+            preview_data = [
+                {str(k): v for k, v in row.items()} for row in data.head().to_dict('records')
+            ]
             
             # Convert datetime objects to strings for JSON serialization
             for row in preview_data:
@@ -107,7 +109,7 @@ class MarketDataService:
                 end_date=data['Date'].iloc[-1].isoformat() if not data.empty else "",
                 total_records=len(data),
                 csv_file_path=csv_file_path,
-                data_preview=preview_data
+                data_preview=preview_data,
             )
             
         except Exception as e:
@@ -157,7 +159,9 @@ class MarketDataService:
             file_size_mb = full_path.stat().st_size / (1024 * 1024)
             
             # Prepare data preview (first 5 rows)
-            preview_data = data.head().to_dict('records')
+            preview_data = [
+                {str(k): v for k, v in row.items()} for row in data.head().to_dict('records')
+            ]
             
             # Convert datetime objects to strings for JSON serialization
             for row in preview_data:
@@ -268,7 +272,10 @@ class MarketDataService:
         
         # Check if index is datetime
         if isinstance(data.index, pd.DatetimeIndex):
-            return data.index.name or "Date"
+            index_name = data.index.name
+            if isinstance(index_name, str):
+                return index_name
+            return "Date"
         
         return None
     
