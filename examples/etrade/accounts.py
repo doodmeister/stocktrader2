@@ -2,7 +2,7 @@ import json
 import logging
 import configparser
 from logging.handlers import RotatingFileHandler
-from order.order import Order
+from order import Order
 
 # loading configuration file
 config = configparser.ConfigParser()

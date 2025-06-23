@@ -100,3 +100,6 @@ pre-commit>=3.4.0
 # ===== COMPATIBILITY FIXES =====
 # Pin setuptools to suppress pandas_ta pkg_resources deprecation warnings
 setuptools<81.0.0
+
+# ===== OPENAI API INTEGRATION =====
+openai >=0.27.0  # For OpenAI API integration

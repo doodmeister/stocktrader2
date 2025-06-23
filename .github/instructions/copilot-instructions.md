@@ -3,26 +3,63 @@ applyTo: '**'
 ---
 # StockTrader Bot - Modern Full-Stack Architecture
 
-## 🚀 Current System Status (December 2024)
+## 🎉 **SYSTEM FULLY OPERATIONAL** (June 2025)
 
-### ✅ **SYSTEM STABLE & OPERATIONAL**
-All core modules have been debugged, tested, and are **error-free**:
+### ✅ **MODERNIZATION COMPLETE & PRODUCTION READY**
+Full-stack system successfully modernized and operational:
 
-- **✅ Core Data Validation**: `core/data_validator.py` - Standalone functions available and validated
-- **✅ Deep Learning Training**: `train/deeplearning_trainer.py` - PyTorch models fully operational  
-- **✅ Feature Engineering**: `train/feature_engineering.py` - 50+ technical features implemented
-- **✅ Pattern Recognition**: `patterns/` - 18+ candlestick patterns with confidence scoring
-- **✅ Technical Indicators**: `core/indicators/` - 10+ indicators with API integration
-- **✅ Security Framework**: `security/` - Enterprise JWT authentication, role-based authorization, E*TRADE integration
-- **✅ Import System**: All modules import without errors, ready for production use
+- **✅ FastAPI Backend**: Enhanced MarketDataService with robust API endpoints
+- **✅ Next.js Frontend**: Modern TypeScript application with React components
+- **✅ API Integration**: Complete frontend-backend communication pipeline working
+- **✅ Market Data Pipeline**: Download, validation, and storage fully operational
+- **✅ Development Workflow**: Professional npm-based concurrent development environment
+- **✅ Core Modules**: All backend systems stable and error-free
 
-### 🎯 **Ready for Phase 1 Development**
-The backend core is **100% stable** and ready for FastAPI integration and frontend development.
+### 🚀 **Quick Start Commands**
+**Start Full-Stack Development:**
+```bash
+cd /c/dev/stocktrader2
+source venv/Scripts/activate  # Activate Python environment
+npm run dev                   # Start both frontend and backend
+```
+
+**Individual Services:**
+```bash
+npm run dev:backend           # FastAPI server on :8000
+npm run dev:frontend          # Next.js app on :3000
+npm run install:all           # Install all dependencies
+```
+
+**Access Points:**
+- Frontend UI: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- Health Check: http://localhost:8000/api/v1/health
 
 ### ⚡ **System Verification Commands**
-Use these commands to verify system stability:
+**Test Complete System:**
+```bash
+cd /c/dev/stocktrader2
+source venv/Scripts/activate
 
-**Quick Verification** (30 seconds):
+# Test enhanced market data service
+python -c "
+from api.services.market_data_service_enhanced import MarketDataService
+from datetime import date, timedelta
+service = MarketDataService()
+end_date = date.today()
+start_date = end_date - timedelta(days=5)
+data = service.download_and_save_stock_data('AAPL', start_date, end_date, save_csv=False)
+print(f'✅ Market data service: {len(data[\"AAPL\"])} rows fetched')
+"
+
+# Test API endpoint (server must be running)
+curl -X POST "http://localhost:8000/api/v1/market-data/download" \
+  -H "Content-Type: application/json" \
+  -d '{"symbols": ["AAPL"], "start_date": "2025-06-18", "end_date": "2025-06-23", "interval": "1d", "save_csv": false}'
+```
+
+**Core Module Verification:**
 ```bash
 cd /c/dev/stocktrader2
 python -c "
@@ -37,7 +74,35 @@ print('✅ All core modules operational!')
 "
 ```
 
-**Comprehensive Testing** (2-3 minutes):
+## 🏗️ **Updated Architecture** (June 2025)
+
+### ✅ **Operational Components**
+- **Backend**: FastAPI with enhanced MarketDataService using yfinance
+- **Frontend**: Next.js + TypeScript + Tailwind CSS + shadcn/ui
+- **API Layer**: RESTful endpoints with Pydantic validation
+- **Data Pipeline**: Market data download, validation, CSV storage
+- **Core Logic**: ✅ **STABLE** - All Python modules (trading, indicators, ML, patterns)
+- **Development**: npm-based concurrent development workflow
+
+### 🔧 **Key Implementation Details**
+- **Enhanced Router**: Using `market_data_enhanced.py` with correct method names
+- **Service Layer**: `MarketDataService.download_and_save_stock_data()` method
+- **Frontend Components**: React components for data download and file management
+- **API Communication**: Complete frontend-backend integration working
+- **Environment**: Windows/GitBash compatible with reproducible setup
+
+## 📊 **Core System Status** (Stable Since December 2024)
+
+### ✅ **ALL CORE MODULES OPERATIONAL**
+- **✅ Core Data Validation**: `core/data_validator.py` - Standalone functions available and validated
+- **✅ Deep Learning Training**: `train/deeplearning_trainer.py` - PyTorch models fully operational  
+- **✅ Feature Engineering**: `train/feature_engineering.py` - 50+ technical features implemented
+- **✅ Pattern Recognition**: `patterns/` - 18+ candlestick patterns with confidence scoring
+- **✅ Technical Indicators**: `core/indicators/` - 10+ indicators with API integration
+- **✅ Security Framework**: `security/` - Enterprise JWT authentication, role-based authorization, E*TRADE integration
+- **✅ Import System**: All modules import without errors, ready for production use
+
+**Comprehensive Testing:**
 ```bash
 cd /c/dev/stocktrader2
 python -c "
@@ -94,10 +159,50 @@ The pattern system uses a **hybrid approach** documented in `patterns/detectors/
 ## Project Overview
 **Goal**: Create a modularized stocktrader bot system that downloads OHLCV data for given time periods and intervals, with modern web frontend and robust backend services.
 
-**Architecture**: Full-stack web application with frontend-backend separation
-- **Frontend**: Next.js + TypeScript + shadcn/ui + Zustand (or Redux) + SWR/React Query
-- **Backend**: FastAPI + Pydantic + SQLAlchemy (if DB) + WebSockets
-- **Core Logic**: **✅ STABLE** Python modules (trading, indicators, ML, risk management)
+**Architecture**: ✅ **OPERATIONAL** Full-stack web application with frontend-backend separation
+- **Frontend**: ✅ Next.js + TypeScript + Tailwind CSS + shadcn/ui + SWR
+- **Backend**: ✅ FastAPI + Enhanced MarketDataService + yfinance + Pydantic validation
+- **Core Logic**: ✅ **STABLE** Python modules (trading, indicators, ML, risk management)
+
+## 🚀 **Development Workflow** (June 2025)
+
+### **Full-Stack Development Setup**
+```bash
+# 1. Navigate to project and activate Python environment
+cd /c/dev/stocktrader2
+source venv/Scripts/activate
+
+# 2. Start both frontend and backend (recommended)
+npm run dev
+
+# This starts:
+# - FastAPI backend on http://localhost:8000
+# - Next.js frontend on http://localhost:3000
+# - Automatic restart on file changes
+```
+
+### **Individual Service Development**
+```bash
+# Backend only (Python/FastAPI)
+npm run dev:backend
+
+# Frontend only (Node.js/Next.js)
+npm run dev:frontend
+
+# Install dependencies
+npm run install:all
+```
+
+### **API Testing & Verification**
+```bash
+# Health check
+curl http://localhost:8000/api/v1/health
+
+# Market data download test
+curl -X POST "http://localhost:8000/api/v1/market-data/download" \
+  -H "Content-Type: application/json" \
+  -d '{"symbols": ["AAPL"], "start_date": "2025-06-18", "end_date": "2025-06-23", "interval": "1d", "save_csv": false}'
+```
 
 ## Environment & Platform Standards
 - **Python Version**: 3.12 (Backend)

@@ -1,0 +1,9 @@
+# Node.js PATH setup for StockTrader development
+export PATH="/c/Program Files/nodejs:$PATH"
+
+# Verify Node.js and npm are available
+if command -v npm >/dev/null 2>&1; then 
+    echo "✅ Node.js and npm are available"
+else 
+    echo "❌ npm not found in PATH"
+fi
