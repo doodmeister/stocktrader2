@@ -19,17 +19,17 @@ export default function CSVFileManager({ onFileLoaded, className = '' }: CSVFile
   useEffect(() => {
     loadFileList()
   }, [])
-
   const loadFileList = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
       const fileList = await marketDataAPI.listCSVFiles()
-      setFiles(fileList)
+      setFiles(Array.isArray(fileList) ? fileList : [])
     } catch (err) {
       console.error('Failed to load file list:', err)
       setError(err instanceof APIError ? err.message : 'Failed to load files')
+      setFiles([]) // Ensure files is always an array even on error
     } finally {
       setIsLoading(false)
     }
@@ -121,9 +121,7 @@ export default function CSVFileManager({ onFileLoaded, className = '' }: CSVFile
             </div>
           </div>
         </div>
-      )}
-
-      {files.length === 0 ? (
+      )}      {Array.isArray(files) && files.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <div className="text-4xl mb-2">📁</div>
           <div className="text-sm">No CSV files found</div>
@@ -131,7 +129,7 @@ export default function CSVFileManager({ onFileLoaded, className = '' }: CSVFile
         </div>
       ) : (
         <div className="space-y-2">
-          {files.map((file, index) => (
+          {Array.isArray(files) && files.map((file, index) => (
             <div
               key={index}
               className="p-3 border border-border rounded-lg hover:bg-muted/30 transition-colors"
@@ -171,8 +169,7 @@ export default function CSVFileManager({ onFileLoaded, className = '' }: CSVFile
                     'Load'
                   )}
                 </button>
-              </div>
-            </div>
+              </div>            </div>
           ))}
         </div>
       )}

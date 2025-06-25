@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react'
 import MarketDataDownload from '@/components/MarketDataDownload'
 import CSVFileManager from '@/components/CSVFileManager'
 import BackendStatus from '@/components/BackendStatus'
-import type { MarketDataResponse, LoadCSVResponse } from '@/lib/api'
+import TechnicalAnalysisWithCharts from '@/components/TechnicalAnalysisWithCharts'
+import PriceChart from '@/components/charts/PriceChart'
+import type { MarketDataResponse, LoadCSVResponse, TechnicalAnalysisResponse } from '@/lib/api'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [isBackendHealthy, setIsBackendHealthy] = useState(false)
   const [currentData, setCurrentData] = useState<MarketDataResponse | LoadCSVResponse | null>(null)
+  const [currentSymbol, setCurrentSymbol] = useState<string | null>(null)
+  const [showAnalysis, setShowAnalysis] = useState(false)
+  const [showCharts, setShowCharts] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -18,13 +23,34 @@ export default function Home() {
   if (!mounted) {
     return null
   }
-
   const handleDataDownloaded = (response: MarketDataResponse) => {
     setCurrentData(response)
+    // Extract symbol from the first symbol in the array
+    const symbol = response.symbols && response.symbols.length > 0 ? response.symbols[0] : null
+    setCurrentSymbol(symbol)
+    setShowAnalysis(false) // Reset analysis view when new data is loaded
+    setShowCharts(false) // Reset chart view when new data is loaded
   }
 
   const handleFileLoaded = (response: LoadCSVResponse) => {
     setCurrentData(response)
+    setCurrentSymbol(response.symbol)
+    setShowAnalysis(false) // Reset analysis view when new data is loaded
+    setShowCharts(false) // Reset chart view when new data is loaded
+  }
+
+  const handleRunAnalysis = () => {
+    if (currentSymbol) {
+      setShowAnalysis(true)
+      setShowCharts(false) // Hide charts when showing analysis
+    }
+  }
+
+  const handleViewCharts = () => {
+    if (currentSymbol) {
+      setShowCharts(true)
+      setShowAnalysis(false) // Hide analysis when showing charts
+    }
   }
 
   return (
@@ -70,61 +96,93 @@ export default function Home() {
             <MarketDataDownload 
               onDownloadComplete={handleDataDownloaded}
               className="w-full"
-            />
-
-            {/* Current Data Display */}
+            />            {/* Current Data Display */}
             {currentData && (
               <div className="trading-card">
-                <h2 className="text-lg font-semibold mb-4">Current Data: {currentData.symbol}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Records:</span>
-                      <span className="ml-2 font-medium">{currentData.total_records.toLocaleString()}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Period:</span>
-                      <span className="ml-2 font-medium">{currentData.start_date} to {currentData.end_date}</span>
-                    </div>
-                    {'csv_file_path' in currentData && currentData.csv_file_path && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">File:</span>
-                        <span className="ml-2 font-medium text-xs">{currentData.csv_file_path}</span>
+                {'symbol' in currentData ? (
+                  // LoadCSVResponse display
+                  <>
+                    <h2 className="text-lg font-semibold mb-4">Current Data: {currentData.symbol}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Records:</span>
+                          <span className="ml-2 font-medium">{currentData.total_records?.toLocaleString() || 'N/A'}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Period:</span>
+                          <span className="ml-2 font-medium">{currentData.start_date} to {currentData.end_date}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">File:</span>
+                          <span className="ml-2 font-medium text-xs">{currentData.file_path}</span>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Price Change:</span>
-                      <span className={`ml-2 font-medium ${currentData.data_summary.price_change_percent >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                        {currentData.data_summary.price_change_percent >= 0 ? '+' : ''}
-                        {currentData.data_summary.price_change_percent.toFixed(2)}%
-                      </span>
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Price Change:</span>
+                          <span className={`ml-2 font-medium ${currentData.data_summary.price_change_percent >= 0 ? 'text-bullish' : 'text-bearish'}`}>
+                            {currentData.data_summary.price_change_percent >= 0 ? '+' : ''}
+                            {currentData.data_summary.price_change_percent.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Price Range:</span>
+                          <span className="ml-2 font-medium">
+                            ${currentData.data_summary.first_price.toFixed(2)} → ${currentData.data_summary.last_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Avg Volume:</span>
+                          <span className="ml-2 font-medium">
+                            {(currentData.data_summary.volume_avg / 1000000).toFixed(1)}M
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Price Range:</span>
-                      <span className="ml-2 font-medium">
-                        ${currentData.data_summary.first_price.toFixed(2)} → ${currentData.data_summary.last_price.toFixed(2)}
-                      </span>
+                  </>
+                ) : (
+                  // MarketDataResponse display
+                  <>
+                    <h2 className="text-lg font-semibold mb-4">Market Data Downloaded</h2>
+                    <div className="space-y-4">
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Status:</span>
+                        <span className="ml-2 font-medium">{currentData.status}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Message:</span>
+                        <span className="ml-2 font-medium">{currentData.message}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Symbols:</span>
+                        <span className="ml-2 font-medium">{currentData.symbols.join(', ')}</span>
+                      </div>
+                      {Object.entries(currentData.data_info).map(([symbol, info]) => (
+                        <div key={symbol} className="border-l-2 border-primary pl-4">
+                          <div className="font-medium text-sm mb-2">{symbol}</div>
+                          <div className="text-xs space-y-1 text-muted-foreground">
+                            <div>Rows: {info.rows}</div>
+                            <div>Date Range: {info.date_range.start} to {info.date_range.end}</div>
+                            {info.latest_close && (
+                              <div>Latest Close: ${info.latest_close.toFixed(2)}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Avg Volume:</span>
-                      <span className="ml-2 font-medium">
-                        {(currentData.data_summary.volume_avg / 1000000).toFixed(1)}M
-                      </span>
-                    </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Analysis Actions */}
             <div className="trading-card">
               <h2 className="text-lg font-semibold mb-4">Analysis Tools</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">                <button 
+                  onClick={handleRunAnalysis}
                   className="trading-button bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                  disabled={!currentData || !isBackendHealthy}
+                  disabled={!currentData || !isBackendHealthy || !currentSymbol}
                 >
                   Run Technical Analysis
                 </button>
@@ -151,9 +209,20 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground mt-2">
                   Load or download market data to enable analysis tools
                 </p>
-              )}
-            </div>
+              )}            </div>
           </div>
+
+          {/* Technical Analysis Section */}
+          {showAnalysis && currentSymbol && (
+            <div className="col-span-1 lg:col-span-2">
+              <TechnicalAnalysisWithCharts 
+                symbol={currentSymbol}
+                onAnalysisComplete={(result: TechnicalAnalysisResponse) => {
+                  console.log('Technical analysis completed:', result)
+                }}
+              />
+            </div>
+          )}
 
           {/* Sidebar */}
           <div className="space-y-6">
@@ -183,10 +252,8 @@ export default function Home() {
                   <div className="text-sm price-up">+45.67 (+0.13%)</div>
                 </div>
               </div>
-            </div>
-
-            {/* Quick Stats */}
-            {currentData && (
+            </div>            {/* Quick Stats */}
+            {currentData && 'symbol' in currentData && (
               <div className="trading-card">
                 <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
                 <div className="space-y-2 text-sm">

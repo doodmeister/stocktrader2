@@ -9,8 +9,64 @@ interface MarketDataDownloadProps {
   className?: string
 }
 
+interface FormData {
+  symbol: string
+  period: string
+  interval: string
+  save_csv: boolean
+}
+
+// Helper function to convert period to date range
+const periodToDateRange = (period: string): { start_date: string; end_date: string } => {
+  const endDate = new Date()
+  const startDate = new Date()
+  
+  switch (period) {
+    case '1d':
+      startDate.setDate(endDate.getDate() - 1)
+      break
+    case '5d':
+      startDate.setDate(endDate.getDate() - 5)
+      break
+    case '1mo':
+      startDate.setMonth(endDate.getMonth() - 1)
+      break
+    case '3mo':
+      startDate.setMonth(endDate.getMonth() - 3)
+      break
+    case '6mo':
+      startDate.setMonth(endDate.getMonth() - 6)
+      break
+    case '1y':
+      startDate.setFullYear(endDate.getFullYear() - 1)
+      break
+    case '2y':
+      startDate.setFullYear(endDate.getFullYear() - 2)
+      break
+    case '5y':
+      startDate.setFullYear(endDate.getFullYear() - 5)
+      break
+    case '10y':
+      startDate.setFullYear(endDate.getFullYear() - 10)
+      break
+    case 'ytd':
+      startDate.setMonth(0, 1) // January 1st of current year
+      break
+    case 'max':
+      startDate.setFullYear(endDate.getFullYear() - 20) // 20 years ago
+      break
+    default:
+      startDate.setFullYear(endDate.getFullYear() - 1) // Default to 1 year
+  }
+  
+  return {
+    start_date: startDate.toISOString().split('T')[0],
+    end_date: endDate.toISOString().split('T')[0]
+  }
+}
+
 export default function MarketDataDownload({ onDownloadComplete, className = '' }: MarketDataDownloadProps) {
-  const [formData, setFormData] = useState<MarketDataRequest>({
+  const [formData, setFormData] = useState<FormData>({
     symbol: '',
     period: '1y',
     interval: '1d',
@@ -96,8 +152,7 @@ export default function MarketDataDownload({ onDownloadComplete, className = '' 
       setIsValidating(false)
     }
   }
-
-  const handleInputChange = (field: keyof MarketDataRequest, value: string | boolean) => {
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -126,9 +181,13 @@ export default function MarketDataDownload({ onDownloadComplete, className = '' 
     setDownloadResult(null)
 
     try {
+      const dateRange = periodToDateRange(formData.period)
       const response = await marketDataAPI.downloadStockData({
-        ...formData,
-        symbol: formData.symbol.trim().toUpperCase()
+        symbols: [formData.symbol.trim().toUpperCase()],
+        start_date: dateRange.start_date,
+        end_date: dateRange.end_date,
+        interval: formData.interval,
+        save_csv: formData.save_csv
       })
       
       setDownloadResult(response)
@@ -266,24 +325,28 @@ export default function MarketDataDownload({ onDownloadComplete, className = '' 
           <div className="p-3 bg-bearish/10 border border-bearish/20 rounded-md text-bearish text-sm">
             {error}
           </div>
-        )}
-
-        {/* Success Display */}
+        )}        {/* Success Display */}
         {downloadResult && (
           <div className="p-4 bg-bullish/10 border border-bullish/20 rounded-md">
             <h3 className="font-medium text-bullish mb-2">Download Complete!</h3>
             <div className="text-sm space-y-1">
-              <div>Symbol: {downloadResult.symbol}</div>
-              <div>Records: {downloadResult.total_records.toLocaleString()}</div>
-              <div>Period: {downloadResult.start_date} to {downloadResult.end_date}</div>
-              {downloadResult.csv_file_path && (
-                <div>File: {downloadResult.csv_file_path}</div>
-              )}
-              <div className="mt-2 p-2 bg-background/50 rounded text-xs">
-                <div>Price: {utils.formatCurrency(downloadResult.data_summary.first_price)} → {utils.formatCurrency(downloadResult.data_summary.last_price)}</div>
-                <div>Change: {utils.formatPercentage(downloadResult.data_summary.price_change_percent)}</div>
-                <div>Avg Volume: {utils.formatLargeNumber(downloadResult.data_summary.volume_avg)}</div>
-              </div>
+              <div><strong>Status:</strong> {downloadResult.status}</div>
+              <div><strong>Message:</strong> {downloadResult.message}</div>
+              <div><strong>Symbols:</strong> {downloadResult.symbols.join(', ')}</div>
+                {/* Display data info for each symbol */}
+              {Object.entries(downloadResult.data_info).map(([symbol, info]) => (
+                <div key={symbol} className="mt-2 p-2 bg-background/50 rounded">
+                  <div className="font-medium">{symbol}</div>
+                  <div>Records: {info.rows.toLocaleString()}</div>
+                  <div>Columns: {info.columns.join(', ')}</div>
+                  {info.date_range.start && info.date_range.end && (
+                    <div>Period: {info.date_range.start} to {info.date_range.end}</div>
+                  )}
+                  {info.latest_close && (
+                    <div>Latest Close: {utils.formatCurrency(info.latest_close)}</div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
