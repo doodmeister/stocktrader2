@@ -3,18 +3,6 @@ applyTo: '**'
 ---
 # StockTrader Bot - Modern Full-Stack Architecture
 
-## 🎉 **SYSTEM FULLY OPERATIONAL** (June 2025)
-
-### ✅ **MODERNIZATION COMPLETE & PRODUCTION READY**
-Full-stack system successfully modernized and operational:
-
-- **✅ FastAPI Backend**: Enhanced MarketDataService with robust API endpoints
-- **✅ Next.js Frontend**: Modern TypeScript application with React components
-- **✅ API Integration**: Complete frontend-backend communication pipeline working
-- **✅ Market Data Pipeline**: Download, validation, and storage fully operational
-- **✅ Development Workflow**: Professional npm-based concurrent development environment
-- **✅ Core Modules**: All backend systems stable and error-free
-
 ### 🚀 **Quick Start Commands**
 **Start Full-Stack Development:**
 ```bash
@@ -24,6 +12,10 @@ npm run dev                   # Start both frontend and backend
 ```
 
 **Individual Services:**
+```bash
+npm run dev:backend           # FastAPI server on :8000
+npm run dev:frontend          # Next.js app on :3000
+npm run install:all           # Install all dependencies
 ```bash
 npm run dev:backend           # FastAPI server on :8000
 npm run dev:frontend          # Next.js app on :3000
@@ -149,37 +141,10 @@ The pattern system uses a **hybrid approach** documented in `patterns/detectors/
 - `bullish_patterns.py` (462 lines) - 9 bullish patterns
 - `bearish_patterns.py` (262 lines) - 5 bearish patterns
 
-**Why This Organization?**
-- ✅ Critical patterns get focused attention
-- ✅ Related patterns share validation logic
-- ✅ Avoids 18+ individual files
-- ✅ Efficient imports and maintenance
-- ✅ Performance optimization
 
 ## Project Overview
 **Goal**: Create a modularized stocktrader bot system that downloads OHLCV data for given time periods and intervals, with modern web frontend and robust backend services.
 
-**Architecture**: ✅ **OPERATIONAL** Full-stack web application with frontend-backend separation
-- **Frontend**: ✅ Next.js + TypeScript + Tailwind CSS + shadcn/ui + SWR
-- **Backend**: ✅ FastAPI + Enhanced MarketDataService + yfinance + Pydantic validation
-- **Core Logic**: ✅ **STABLE** Python modules (trading, indicators, ML, risk management)
-
-## 🚀 **Development Workflow** (June 2025)
-
-### **Full-Stack Development Setup**
-```bash
-# 1. Navigate to project and activate Python environment
-cd /c/dev/stocktrader2
-source venv/Scripts/activate
-
-# 2. Start both frontend and backend (recommended)
-npm run dev
-
-# This starts:
-# - FastAPI backend on http://localhost:8000
-# - Next.js frontend on http://localhost:3000
-# - Automatic restart on file changes
-```
 
 ### **Individual Service Development**
 ```bash
@@ -227,42 +192,6 @@ curl -X POST "http://localhost:8000/api/v1/market-data/download" \
 - **Use `cd /c/dev/stocktrader2` to ensure correct project directory**
 - **Handle file path separators correctly for Windows (use forward slashes in GitBash)**
 - **Escape spaces in file paths or use quotes when necessary**
-
-### System Verification Commands
-```bash
-# Verify all core modules are working
-cd /c/dev/stocktrader2
-python -c "
-from core.data_validator import validate_file_path, validate_dataframe
-from train.deeplearning_trainer import PatternModelTrainer
-from train.feature_engineering import compute_technical_features, add_candlestick_pattern_features
-from patterns.factory import create_pattern_detector
-from patterns.orchestrator import CandlestickPatterns
-from security.authentication import create_jwt_token, get_api_credentials
-from security.authorization import create_user_context, Role
-print('✅ All core modules operational!')
-"
-```
-
-### 🛠️ Troubleshooting Common Issues
-
-#### Import Errors
-**Problem**: `ModuleNotFoundError` when importing core modules
-**Solution**: 
-```bash
-# Ensure correct directory and virtual environment
-cd /c/dev/stocktrader2
-source venv/Scripts/activate
-which python  # Should point to venv/Scripts/python
-```
-
-#### Pandas/NumPy Version Conflicts  
-**Problem**: pandas_ta compatibility issues
-**Solution**:
-```bash
-# Install correct versions from requirements.txt
-pip install pandas>=2.1.0 "numpy<2.0.0" pandas-ta>=0.3.14b setuptools<81
-```
 
 #### Pattern Detection Issues
 **Problem**: Pattern detection not working
@@ -518,62 +447,6 @@ All technical indicators follow these standards:
 - **Documentation**: Comprehensive docstrings with parameter descriptions
 - **Testing**: Functionally verified with both index types
 
-### Core Indicator Modules
-
-#### `core/indicators/base.py`
-**Basic Moving Averages and Utilities**
-- Simple Moving Average (SMA)
-- Exponential Moving Average (EMA)
-- Shared validation utilities
-
-#### `core/indicators/rsi.py`
-**Relative Strength Index (0-100 scale)**
-- Measures speed and change of price movements
-- Identifies overbought (>70) and oversold (<30) conditions
-- Uses pandas_ta with manual calculation fallback
-
-#### `core/indicators/macd.py`
-**Moving Average Convergence Divergence**
-- Shows relationship between two moving averages
-- Returns MACD line, signal line, and histogram
-- Default parameters: fast=12, slow=26, signal=9
-
-#### `core/indicators/bollinger_bands.py`
-**Volatility Bands**
-- Volatility bands around moving average
-- Returns upper band, middle (SMA), lower band, bandwidth
-- Default parameters: period=20, std_dev=2
-
-#### `core/indicators/stochastic.py`
-**Stochastic Oscillator**
-- Compares closing price to price range over period
-- Returns %K and %D lines for momentum analysis
-- Default parameters: K=14, D=3, smoothing=3
-
-#### `core/indicators/williams_r.py`
-**Williams %R (-100 to 0 scale)**
-- Momentum oscillator, inverse of Fast Stochastic
-- Overbought >-20, oversold <-80
-- Default period: 14
-
-#### `core/indicators/cci.py`
-**Commodity Channel Index**
-- Measures deviation from average price (±100 range)
-- Identifies cyclical trends and reversal points
-- Default period: 20
-
-#### `core/indicators/vwap.py`
-**Volume Weighted Average Price & On-Balance Volume**
-- VWAP: Average price weighted by volume
-- OBV: Cumulative volume based on price direction
-- Robust datetime index handling with fallback
-
-#### `core/indicators/adx.py`
-**Average Directional Index with Trend Indicators**
-- ADX: Trend strength measurement (>25 strong, <20 weak)
-- +DI/-DI: Directional indicators
-- ATR: Average True Range for volatility
-- Default period: 14
 
 ### API Integration Pattern
 ```python
