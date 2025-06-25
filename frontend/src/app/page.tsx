@@ -199,10 +199,11 @@ export default function Home() {
                   Generate AI Report
                 </button>
                 <button 
-                  className="trading-button bg-muted text-muted-foreground hover:bg-muted/90 disabled:opacity-50"
+                  onClick={handleViewCharts}
+                  className="trading-button bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
                   disabled={!currentData || !isBackendHealthy}
                 >
-                  View Charts
+                  📊 View Charts
                 </button>
               </div>
               {!currentData && (
@@ -221,6 +222,31 @@ export default function Home() {
                   console.log('Technical analysis completed:', result)
                 }}
               />
+            </div>
+          )}
+
+          {/* Price Chart Section */}
+          {showCharts && currentSymbol && currentData && (
+            <div className="col-span-1 lg:col-span-2">
+              <div className="trading-card">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">Price Chart - {currentSymbol}</h2>
+                  <button
+                    onClick={() => setShowCharts(false)}
+                    className="px-3 py-1 text-xs rounded-md border bg-background hover:bg-accent transition-colors"
+                  >
+                    Close Chart
+                  </button>
+                </div>
+                
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>📈 Interactive price charts coming soon!</p>
+                  <p className="text-xs mt-2">Chart integration with market data in development.</p>
+                  <p className="text-xs mt-1">
+                    Current data: {currentSymbol} ({('symbol' in currentData) ? 'CSV file' : 'Downloaded data'})
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 

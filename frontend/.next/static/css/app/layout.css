@@ -983,6 +983,10 @@ video {
 .bg-secondary\/10 {
   background-color: hsl(var(--secondary) / 0.1);
 }
+.bg-blue-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
+}
 .p-2 {
   padding: 0.5rem;
 }
@@ -1127,6 +1131,10 @@ video {
   --tw-text-opacity: 1;
   color: rgb(133 77 14 / var(--tw-text-opacity, 1));
 }
+.text-white {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
 .placeholder-muted-foreground::-moz-placeholder {
   color: hsl(var(--muted-foreground));
 }
@@ -1186,6 +1194,10 @@ video {
 }
 .hover\:bg-secondary\/90:hover {
   background-color: hsl(var(--secondary) / 0.9);
+}
+.hover\:bg-blue-700:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 78 216 / var(--tw-bg-opacity, 1));
 }
 .hover\:text-primary\/80:hover {
   color: hsl(var(--primary) / 0.8);
