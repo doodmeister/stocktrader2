@@ -5,16 +5,14 @@ import MarketDataDownload from '@/components/MarketDataDownload'
 import CSVFileManager from '@/components/CSVFileManager'
 import BackendStatus from '@/components/BackendStatus'
 import TechnicalAnalysisWithCharts from '@/components/TechnicalAnalysisWithCharts'
-import PriceChart from '@/components/charts/PriceChart'
 import type { MarketDataResponse, LoadCSVResponse, TechnicalAnalysisResponse } from '@/lib/api'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [isBackendHealthy, setIsBackendHealthy] = useState(false)
   const [currentData, setCurrentData] = useState<MarketDataResponse | LoadCSVResponse | null>(null)
-  const [currentSymbol, setCurrentSymbol] = useState<string | null>(null)
-  const [showAnalysis, setShowAnalysis] = useState(false)
-  const [showCharts, setShowCharts] = useState(false)
+  const [currentSymbol, setCurrentSymbol] = useState<string | null>('QQQ') // Default to QQQ for testing
+  const [showAnalysis, setShowAnalysis] = useState(true) // Default to show analysis for testing
 
   useEffect(() => {
     setMounted(true)
@@ -29,27 +27,17 @@ export default function Home() {
     const symbol = response.symbols && response.symbols.length > 0 ? response.symbols[0] : null
     setCurrentSymbol(symbol)
     setShowAnalysis(false) // Reset analysis view when new data is loaded
-    setShowCharts(false) // Reset chart view when new data is loaded
   }
 
   const handleFileLoaded = (response: LoadCSVResponse) => {
     setCurrentData(response)
     setCurrentSymbol(response.symbol)
     setShowAnalysis(false) // Reset analysis view when new data is loaded
-    setShowCharts(false) // Reset chart view when new data is loaded
   }
 
   const handleRunAnalysis = () => {
     if (currentSymbol) {
       setShowAnalysis(true)
-      setShowCharts(false) // Hide charts when showing analysis
-    }
-  }
-
-  const handleViewCharts = () => {
-    if (currentSymbol) {
-      setShowCharts(true)
-      setShowAnalysis(false) // Hide analysis when showing charts
     }
   }
 
@@ -198,13 +186,6 @@ export default function Home() {
                 >
                   Generate AI Report
                 </button>
-                <button 
-                  onClick={handleViewCharts}
-                  className="trading-button bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
-                  disabled={!currentData || !isBackendHealthy}
-                >
-                  📊 View Charts
-                </button>
               </div>
               {!currentData && (
                 <p className="text-sm text-muted-foreground mt-2">
@@ -222,31 +203,6 @@ export default function Home() {
                   console.log('Technical analysis completed:', result)
                 }}
               />
-            </div>
-          )}
-
-          {/* Price Chart Section */}
-          {showCharts && currentSymbol && currentData && (
-            <div className="col-span-1 lg:col-span-2">
-              <div className="trading-card">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Price Chart - {currentSymbol}</h2>
-                  <button
-                    onClick={() => setShowCharts(false)}
-                    className="px-3 py-1 text-xs rounded-md border bg-background hover:bg-accent transition-colors"
-                  >
-                    Close Chart
-                  </button>
-                </div>
-                
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>📈 Interactive price charts coming soon!</p>
-                  <p className="text-xs mt-2">Chart integration with market data in development.</p>
-                  <p className="text-xs mt-1">
-                    Current data: {currentSymbol} ({('symbol' in currentData) ? 'CSV file' : 'Downloaded data'})
-                  </p>
-                </div>
-              </div>
             </div>
           )}
 

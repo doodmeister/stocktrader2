@@ -179,6 +179,9 @@ curl -X POST "http://localhost:8000/api/v1/market-data/download" \
 - **Target OS**: Windows
 - **Default Shell**: GitBash (`bash.exe`)
 - **All terminal commands MUST be bash-compatible**
+- **No PowerShell or CMD commands** unless explicitly stated
+- **yahoofinance will return values in this format: Datetime,open,high,low,close,volume**
+- **Always make sure you account for both upper case and lower case headers in yahoo finance data**
 
 ### Terminal Command Standards
 - **No emojis in bash commands**

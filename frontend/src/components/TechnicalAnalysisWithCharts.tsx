@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { analysisAPI, utils, APIError } from '@/lib/api'
-import type { TechnicalAnalysisRequest, TechnicalAnalysisResponse, TechnicalIndicatorData } from '@/lib/api'
+import type { TechnicalAnalysisRequest, TechnicalAnalysisResponse } from '@/lib/api'
 import TechnicalIndicatorChart from './charts/TechnicalIndicatorChart'
 
 interface TechnicalAnalysisWithChartsProps {
@@ -27,6 +27,7 @@ export default function TechnicalAnalysisWithCharts({
       return
     }
 
+    console.log('Starting analysis for symbol:', symbol)
     setIsAnalyzing(true)
     setError(null)
     setAnalysisResult(null)
@@ -34,18 +35,38 @@ export default function TechnicalAnalysisWithCharts({
     try {
       const request: TechnicalAnalysisRequest = {
         symbol: symbol.trim().toUpperCase(),
-        indicators: ['rsi', 'macd', 'bollinger_bands', 'sma', 'ema'],
+        data_source: 'csv',
+        include_indicators: [
+          'rsi', 
+          'macd', 
+          'bollinger_bands', 
+          'stochastic',
+          'williams_r',
+          'cci',
+          'vwap',
+          'obv',
+          'adx',
+          'sma', 
+          'ema'
+        ],
         rsi_period: 14,
         macd_fast: 12,
         macd_slow: 26,
         macd_signal: 9,
         bb_period: 20,
-        bb_std: 2.0,
-        sma_period: 20,
-        ema_period: 12  // Use shorter period for EMA to ensure it calculates with limited data
+        bb_std_dev: 2.0,
+        stoch_k_period: 14,
+        stoch_d_period: 3,
+        williams_r_period: 14,
+        cci_period: 20,
+        adx_period: 14,
+        sma_periods: [20, 50],
+        ema_periods: [12, 26]  // Use shorter period for EMA to ensure it calculates with limited data
       }
       
+      console.log('Sending request:', request)
       const response = await analysisAPI.runTechnicalAnalysis(request)
+      console.log('Received response:', response)
       setAnalysisResult(response)
       onAnalysisComplete?.(response)
     } catch (err) {
@@ -67,29 +88,11 @@ export default function TechnicalAnalysisWithCharts({
     }
   }
 
-  const getSignalStrengthColor = (strength?: string) => {
-    switch (strength?.toLowerCase()) {
-      case 'strong':
-        return 'text-bullish font-semibold'
-      case 'medium':
-        return 'text-secondary-foreground font-medium'
-      case 'weak':
-        return 'text-muted-foreground'
-      default:
-        return 'text-foreground'
-    }
-  }
-
-  const formatCompositeSignal = (signal?: number) => {
-    if (signal === undefined || signal === null) return 'N/A'
-    
-    if (signal > 0.6) return 'Strong Bullish'
-    if (signal > 0.3) return 'Bullish'
-    if (signal > 0.1) return 'Weak Bullish'
-    if (signal < -0.6) return 'Strong Bearish'
-    if (signal < -0.3) return 'Bearish'
-    if (signal < -0.1) return 'Weak Bearish'
-    return 'Neutral'
+  const getSignalStrengthColor = (strength?: number | string) => {
+    const strengthValue = typeof strength === 'number' ? strength : parseFloat(strength || '0')
+    if (strengthValue >= 0.7) return 'text-bullish font-semibold'
+    if (strengthValue >= 0.4) return 'text-secondary-foreground font-medium'
+    return 'text-muted-foreground'
   }
 
   return (
@@ -147,48 +150,31 @@ export default function TechnicalAnalysisWithCharts({
                 <span className="font-medium ml-2">{analysisResult.symbol}</span>
               </div>
               <div>
-                <span className="text-muted-foreground">Current Price:</span> 
+                <span className="text-muted-foreground">Total Records:</span> 
                 <span className="font-medium ml-2">
-                  {analysisResult.current_price ? utils.formatCurrency(analysisResult.current_price) : 'N/A'}
+                  {analysisResult.total_records.toLocaleString()}
                 </span>
               </div>
               <div>
-                <span className="text-muted-foreground">Composite Signal:</span> 
-                <span className={`font-medium ml-2 ${getSignalStrengthColor(analysisResult.signal_strength)}`}>
-                  {formatCompositeSignal(analysisResult.composite_signal)}
+                <span className="text-muted-foreground">Overall Signal:</span> 
+                <span className={`font-medium ml-2 ${getSignalColor(analysisResult.overall_signal)}`}>
+                  {analysisResult.overall_signal?.toUpperCase()}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Signal Strength:</span> 
                 <span className={`font-medium ml-2 ${getSignalStrengthColor(analysisResult.signal_strength)}`}>
-                  {analysisResult.signal_strength || 'N/A'}
+                  {(analysisResult.signal_strength * 100).toFixed(1)}%
                 </span>
               </div>
-              {analysisResult.price_change !== undefined && (
-                <div>
-                  <span className="text-muted-foreground">Price Change:</span> 
-                  <span className={`font-medium ml-2 ${analysisResult.price_change >= 0 ? 'text-bullish' : 'text-bearish'}`}>
-                    {utils.formatPercentage(analysisResult.price_change_percent || 0)}
-                  </span>
-                </div>
-              )}
+              <div>
+                <span className="text-muted-foreground">Analysis Time:</span> 
+                <span className="font-medium ml-2">
+                  {new Date(analysisResult.analysis_timestamp).toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
-
-          {/* Skipped Indicators Warning */}
-          {analysisResult.data_info.skipped_indicators && analysisResult.data_info.skipped_indicators.length > 0 && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-md">
-              <h4 className="font-medium text-amber-700 dark:text-amber-300 mb-1">Indicators Skipped</h4>
-              <p className="text-sm text-amber-600 dark:text-amber-400">
-                The following indicators were skipped due to insufficient data:
-              </p>
-              <ul className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                {(analysisResult.data_info.skipped_indicators as string[]).map((indicator: string, index: number) => (
-                  <li key={index}>• {indicator}</li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           {/* Charts or Table View */}
           <div className="border-t pt-4">
@@ -205,15 +191,15 @@ export default function TechnicalAnalysisWithCharts({
             
             {showCharts ? (
               <>
-                {Object.keys(analysisResult.indicators).length === 0 ? (
+                {analysisResult.indicators.length === 0 ? (
                   <p className="text-muted-foreground text-center py-4">No indicators calculated</p>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {Object.entries(analysisResult.indicators).map(([name, indicator]) => (
+                    {analysisResult.indicators.map((indicator) => (
                       <TechnicalIndicatorChart
-                        key={name}
+                        key={indicator.name}
                         indicator={indicator}
-                        indicatorName={name}
+                        indicatorName={indicator.name}
                         height={180}
                       />
                     ))}
@@ -222,8 +208,8 @@ export default function TechnicalAnalysisWithCharts({
               </>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Object.entries(analysisResult.indicators).map(([name, indicator]) => (
-                  <div key={name} className="p-3 bg-background/50 rounded-md border">
+                {analysisResult.indicators.map((indicator) => (
+                  <div key={indicator.name} className="p-3 bg-background/50 rounded-md border">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-medium text-sm">{indicator.name}</h4>
                       <span className={`text-xs px-2 py-1 rounded ${getSignalColor(indicator.signal)} bg-current/10`}>
@@ -241,31 +227,6 @@ export default function TechnicalAnalysisWithCharts({
                           }
                         </div>
                       )}
-                      
-                      {indicator.metadata && Object.entries(indicator.metadata).map(([key, value]) => {
-                        if (key === 'period' || key === 'fast' || key === 'slow') {
-                          return (
-                            <div key={key}>
-                              <span className="font-medium capitalize">{key}:</span> {value}
-                            </div>
-                          )
-                        }
-                        if (key === 'overbought' || key === 'oversold') {
-                          return (
-                            <div key={key}>
-                              <span className="font-medium capitalize">{key}:</span> {value}
-                            </div>
-                          )
-                        }
-                        if (key === 'upper_band' || key === 'lower_band' && typeof value === 'number') {
-                          return (
-                            <div key={key}>
-                              <span className="font-medium">{key.replace('_', ' ')}:</span> {value.toFixed(2)}
-                            </div>
-                          )
-                        }
-                        return null
-                      })}
                     </div>
                   </div>
                 ))}
@@ -275,13 +236,9 @@ export default function TechnicalAnalysisWithCharts({
 
           {/* Data Info */}
           <div className="text-xs text-muted-foreground">
-            <div>Analysis Time: {new Date(analysisResult.analysis_time).toLocaleString()}</div>
-            <div>Data Points: {analysisResult.data_info.rows?.toLocaleString() || 'N/A'}</div>
-            {analysisResult.data_info.date_range && (
-              <div>
-                Date Range: {analysisResult.data_info.date_range.start} to {analysisResult.data_info.date_range.end}
-              </div>
-            )}
+            <div>Analysis Time: {new Date(analysisResult.analysis_timestamp).toLocaleString()}</div>
+            <div>Data Points: {analysisResult.total_records.toLocaleString()}</div>
+            <div>Data Period: {analysisResult.data_period}</div>
           </div>
         </div>
       )}

@@ -11,6 +11,7 @@ from datetime import date, datetime, timedelta
 import logging
 from pydantic import BaseModel
 
+from api.models.market_data import LoadCSVRequest, LoadCSVResponse
 from api.services.market_data_service_enhanced import MarketDataService
 from utils.logger import setup_logger
 
@@ -244,7 +245,7 @@ async def validate_symbol(symbol: str) -> Dict[str, Any]:
 
 
 @router.get("/list-files")
-async def list_available_data() -> Dict[str, Any]:
+async def list_available_data() -> List[Dict[str, Any]]:
     """
     List all available CSV data files.
     
@@ -253,12 +254,7 @@ async def list_available_data() -> Dict[str, Any]:
     """
     try:
         files = market_service.list_available_data()
-        
-        return {
-            "status": "success",
-            "total_files": len(files),
-            "files": files
-        }
+        return files
         
     except Exception as e:
         logger.error(f"List files failed: {e}")
@@ -326,3 +322,37 @@ async def market_data_health() -> Dict[str, Any]:
         "csv_directory": market_service.csv_directory,
         "available_files": len(market_service.list_available_data())
     }
+
+
+@router.post("/load-csv")
+async def load_csv_data(request: LoadCSVRequest) -> Dict[str, Any]:
+    """
+    Load stock data from CSV file.
+    
+    Args:
+        request: CSV loading request
+        
+    Returns:
+        Dict: Loaded data information matching frontend interface
+        
+    Raises:
+        HTTPException: If loading fails
+    """
+    try:
+        logger.info(f"Loading CSV data from {request.file_path}")
+        
+        # Load CSV data using the enhanced service
+        response = market_service.load_csv_data(
+            file_path=request.file_path,
+            symbol=request.symbol
+        )
+        
+        logger.info(f"Successfully loaded CSV data from {request.file_path}")
+        return response
+        
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {e}")
+        raise HTTPException(status_code=404, detail="CSV file not found")
+    except Exception as e:
+        logger.error(f"Failed to load CSV data: {e}")
+        raise HTTPException(status_code=500, detail=f"CSV loading failed: {str(e)}")
