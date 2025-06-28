@@ -28,45 +28,110 @@ class BullishEngulfingPattern(PatternDetector):
     @validate_dataframe
     def detect(self, df: pd.DataFrame) -> PatternResult:
         """
-        Detect Bullish Engulfing pattern.
+        Detect Bullish Engulfing pattern across the entire DataFrame.
         
         Args:
             df: OHLCV DataFrame
             
         Returns:
-            PatternResult with detection results
+            PatternResult with all detection points
         """
-        first, second = df.iloc[-2], df.iloc[-1]
+        detection_points = []
+        overall_detected = False
+        max_confidence = 0.0
+        max_strength = PatternStrength.WEAK
         
-        # First candle must be bearish
-        first_bearish = first['Close'] < first['Open']
+        # Ensure we have a date column or index for detection points
+        date_col = None
+        if 'Date' in df.columns:
+            date_col = 'Date'
+        elif 'date' in df.columns:
+            date_col = 'date'
+        elif isinstance(df.index, pd.DatetimeIndex):
+            date_col = df.index
         
-        # Second candle must be bullish  
-        second_bullish = second['Close'] > second['Open']
+        # Need at least 2 candles for engulfing pattern
+        if len(df) < 2:
+            return PatternResult(
+                name=self.name,
+                detected=False,
+                confidence=0.0,
+                pattern_type=self.pattern_type,
+                strength=PatternStrength.WEAK,
+                description="Bullish reversal pattern where second candle engulfs first bearish candle",
+                min_rows_required=self.min_rows,
+                detection_points=[]
+            )
         
-        # Second candle must engulf first candle's body
-        engulfs = (second['Open'] < first['Close'] and 
-                  second['Close'] > first['Open'])
-        
-        detected = first_bearish and second_bullish and engulfs
-        
-        if detected:
-            # Calculate confidence based on how much the second candle engulfs the first
-            first_body = abs(first['Open'] - first['Close'])
-            second_body = abs(second['Open'] - second['Close']) 
-            engulfing_ratio = second_body / first_body if first_body > 0 else 1.0
-            confidence = min(0.9, 0.6 + min(0.3, engulfing_ratio - 1.0))
-        else:
-            confidence = 0.0
+        # Scan each pair of consecutive candles
+        for i in range(1, len(df)):
+            first_data = self._get_price_data(df, i-1)
+            second_data = self._get_price_data(df, i)
             
-        strength = self._determine_strength(confidence)
+            # First candle must be bearish
+            first_bearish = first_data['close'] < first_data['open']
+            
+            # Second candle must be bullish  
+            second_bullish = second_data['close'] > second_data['open']
+            
+            # Second candle must engulf first candle's body
+            engulfs = (second_data['open'] < first_data['close'] and 
+                      second_data['close'] > first_data['open'])
+            
+            detected = first_bearish and second_bullish and engulfs
+            
+            if detected:
+                # Calculate confidence based on how much the second candle engulfs the first
+                first_body = abs(first_data['open'] - first_data['close'])
+                second_body = abs(second_data['open'] - second_data['close']) 
+                engulfing_ratio = second_body / first_body if first_body > 0 else 1.0
+                confidence = min(0.9, 0.6 + min(0.3, engulfing_ratio - 1.0))
+                strength = self._determine_strength(confidence)
+                
+                # Get date for this detection point (use second candle's date)
+                if date_col is not None:
+                    if isinstance(date_col, pd.Index):
+                        detection_date = str(date_col[i])
+                    else:
+                        detection_date = str(df.iloc[i][date_col])
+                else:
+                    detection_date = f"Row {i}"
+                
+                detection_points.append({
+                    'date': detection_date,
+                    'confidence': confidence,
+                    'strength': strength.name,
+                    'details': {
+                        'first_candle': {
+                            'open': first_data['open'],
+                            'high': first_data['high'],
+                            'low': first_data['low'],
+                            'close': first_data['close']
+                        },
+                        'second_candle': {
+                            'open': second_data['open'],
+                            'high': second_data['high'],
+                            'low': second_data['low'],
+                            'close': second_data['close']
+                        },
+                        'engulfing_ratio': engulfing_ratio,
+                        'first_body': first_body,
+                        'second_body': second_body
+                    }
+                })
+                
+                overall_detected = True
+                if confidence > max_confidence:
+                    max_confidence = confidence
+                    max_strength = strength
         
         return PatternResult(
             name=self.name,
-            detected=detected,
-            confidence=confidence,
+            detected=overall_detected,
+            confidence=max_confidence,
             pattern_type=self.pattern_type,
-            strength=strength,
+            strength=max_strength,
             description="Bullish reversal pattern where second candle engulfs first bearish candle",
-            min_rows_required=self.min_rows
+            min_rows_required=self.min_rows,
+            detection_points=detection_points
         )

@@ -45,6 +45,7 @@ class PatternResult:
     strength: PatternStrength
     description: str
     min_rows_required: int
+    detection_points: Optional[List[Dict[str, Any]]] = None
     
     def __post_init__(self):
         """Validate confidence range."""

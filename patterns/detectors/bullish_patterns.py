@@ -28,28 +28,93 @@ class PiercingPattern(PatternDetector):
     
     @validate_dataframe
     def detect(self, df: pd.DataFrame) -> PatternResult:
-        """Detect Piercing Pattern."""
-        prev, last = df.iloc[-2], df.iloc[-1]
-        midpoint = (prev['Open'] + prev['Close']) / 2
+        """Detect Piercing Pattern across the entire DataFrame."""
+        detection_points = []
+        overall_detected = False
+        max_confidence = 0.0
+        max_strength = PatternStrength.WEAK
         
-        detected = (
-            prev['Close'] < prev['Open'] and  # First candle bearish
-            last['Open'] < prev['Close'] and  # Gap down opening
-            last['Close'] > midpoint and      # Closes above midpoint
-            last['Close'] > last['Open']      # Second candle bullish
-        )
+        # Ensure we have a date column or index for detection points
+        date_col = None
+        if 'Date' in df.columns:
+            date_col = 'Date'
+        elif 'date' in df.columns:
+            date_col = 'date'
+        elif isinstance(df.index, pd.DatetimeIndex):
+            date_col = df.index
         
-        confidence = 0.7 if detected else 0.0
-        strength = self._determine_strength(confidence)
+        # Need at least 2 candles
+        if len(df) < 2:
+            return PatternResult(
+                name=self.name,
+                detected=False,
+                confidence=0.0,
+                pattern_type=self.pattern_type,
+                strength=PatternStrength.WEAK,
+                description="Two-candle bullish reversal where second candle pierces into first",
+                min_rows_required=self.min_rows,
+                detection_points=[]
+            )
+        
+        for i in range(1, len(df)):
+            prev_data = self._get_price_data(df, i-1)
+            last_data = self._get_price_data(df, i)
+            midpoint = (prev_data['open'] + prev_data['close']) / 2
+            
+            detected = (
+                prev_data['close'] < prev_data['open'] and  # First candle bearish
+                last_data['open'] < prev_data['close'] and  # Gap down opening
+                last_data['close'] > midpoint and      # Closes above midpoint
+                last_data['close'] > last_data['open']      # Second candle bullish
+            )
+            
+            if detected:
+                confidence = 0.7
+                strength = self._determine_strength(confidence)
+                
+                if date_col is not None:
+                    if isinstance(date_col, pd.Index):
+                        detection_date = str(date_col[i])
+                    else:
+                        detection_date = str(df.iloc[i][date_col])
+                else:
+                    detection_date = f"Row {i}"
+                
+                detection_points.append({
+                    'date': detection_date,
+                    'confidence': confidence,
+                    'strength': strength.name,
+                    'details': {
+                        'prev_candle': {
+                            'open': prev_data['open'],
+                            'high': prev_data['high'],
+                            'low': prev_data['low'],
+                            'close': prev_data['close']
+                        },
+                        'current_candle': {
+                            'open': last_data['open'],
+                            'high': last_data['high'],
+                            'low': last_data['low'],
+                            'close': last_data['close']
+                        },
+                        'midpoint': midpoint
+                    }
+                })
+                
+                overall_detected = True
+                if confidence > max_confidence:
+                    max_confidence = confidence
+                    max_strength = strength
         
         return PatternResult(
             name=self.name,
-            detected=detected,
-            confidence=confidence,
+            detected=overall_detected,
+            confidence=max_confidence,
             pattern_type=self.pattern_type,
-            strength=strength,
+            strength=max_strength,
             description="Two-candle bullish reversal where second candle pierces into first",
-            min_rows_required=self.min_rows
+            min_rows_required=self.min_rows,
+            detection_points=detection_points
         )
 
 

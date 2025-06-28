@@ -5,7 +5,9 @@ import MarketDataDownload from '@/components/MarketDataDownload'
 import CSVFileManager from '@/components/CSVFileManager'
 import BackendStatus from '@/components/BackendStatus'
 import TechnicalAnalysisWithCharts from '@/components/TechnicalAnalysisWithCharts'
-import type { MarketDataResponse, LoadCSVResponse, TechnicalAnalysisResponse } from '@/lib/api'
+import PatternResults from '@/components/PatternResults'
+import { analysisAPI } from '@/lib/api'
+import type { MarketDataResponse, LoadCSVResponse, TechnicalAnalysisResponse, PatternDetectionResponse } from '@/lib/api'
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
@@ -13,6 +15,8 @@ export default function Home() {
   const [currentData, setCurrentData] = useState<MarketDataResponse | LoadCSVResponse | null>(null)
   const [currentSymbol, setCurrentSymbol] = useState<string | null>('QQQ') // Default to QQQ for testing
   const [showAnalysis, setShowAnalysis] = useState(true) // Default to show analysis for testing
+  const [patternResult, setPatternResult] = useState<PatternDetectionResponse | null>(null);
+  const [isDetectingPatterns, setIsDetectingPatterns] = useState(false);
 
   useEffect(() => {
     setMounted(true)
@@ -38,8 +42,33 @@ export default function Home() {
   const handleRunAnalysis = () => {
     if (currentSymbol) {
       setShowAnalysis(true)
+      setPatternResult(null)
     }
   }
+
+  const handleDetectPatterns = async () => {
+    if (!currentSymbol) return;
+
+    setIsDetectingPatterns(true);
+    setPatternResult(null);
+    setShowAnalysis(false);
+
+    try {
+        const request = {
+            symbol: currentSymbol,
+            data_source: 'csv',
+            min_confidence: 0.7,
+            recent_only: true,
+            lookback_days: 90,
+        };
+        const result = await analysisAPI.detectPatterns(request);
+        setPatternResult(result);
+    } catch (error) {
+        console.error("Pattern detection failed", error);
+    } finally {
+        setIsDetectingPatterns(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -175,10 +204,11 @@ export default function Home() {
                   Run Technical Analysis
                 </button>
                 <button 
+                  onClick={handleDetectPatterns}
                   className="trading-button bg-secondary text-secondary-foreground hover:bg-secondary/90 disabled:opacity-50"
-                  disabled={!currentData || !isBackendHealthy}
+                  disabled={!currentData || !isBackendHealthy || isDetectingPatterns}
                 >
-                  Detect Patterns
+                  {isDetectingPatterns ? 'Detecting...' : 'Detect Patterns'}
                 </button>
                 <button 
                   className="trading-button bg-accent text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
@@ -202,6 +232,15 @@ export default function Home() {
                 onAnalysisComplete={(result: TechnicalAnalysisResponse) => {
                   console.log('Technical analysis completed:', result)
                 }}
+              />
+            </div>
+          )}
+
+          {patternResult && (
+            <div className="col-span-1 lg:col-span-2">
+              <PatternResults 
+                results={patternResult} 
+                csvFilePath={currentData && 'file_path' in currentData ? currentData.file_path : undefined}
               />
             </div>
           )}

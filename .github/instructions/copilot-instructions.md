@@ -2,6 +2,8 @@
 applyTo: '**'
 ---
 # StockTrader Bot - Modern Full-Stack Architecture
+## Project Overview
+**Goal**: Create a modularized stocktrader bot system that downloads OHLCV data for given time periods and intervals, with modern web frontend and robust backend services.
 
 ### 🚀 **Quick Start Commands**
 **Start Full-Stack Development:**
@@ -87,12 +89,12 @@ print('✅ All core modules operational!')
 
 ### ✅ **ALL CORE MODULES OPERATIONAL**
 - **✅ Core Data Validation**: `core/data_validator.py` - Standalone functions available and validated
-- **✅ Deep Learning Training**: `train/deeplearning_trainer.py` - PyTorch models fully operational  
-- **✅ Feature Engineering**: `train/feature_engineering.py` - 50+ technical features implemented
-- **✅ Pattern Recognition**: `patterns/` - 18+ candlestick patterns with confidence scoring
-- **✅ Technical Indicators**: `core/indicators/` - 10+ indicators with API integration
+- **✅ Deep Learning Training**: `train/deeplearning_trainer.py`  
+- **✅ Feature Engineering**: `train/feature_engineering.py` 
+- **✅ Pattern Recognition**: `patterns/` 
+- **✅ Technical Indicators**: `core/indicators/` 
 - **✅ Security Framework**: `security/` - Enterprise JWT authentication, role-based authorization, E*TRADE integration
-- **✅ Import System**: All modules import without errors, ready for production use
+- **✅ Import System**:
 
 **Comprehensive Testing:**
 ```bash
@@ -140,11 +142,6 @@ The pattern system uses a **hybrid approach** documented in `patterns/detectors/
 **Grouped Files** (Related Patterns):
 - `bullish_patterns.py` (462 lines) - 9 bullish patterns
 - `bearish_patterns.py` (262 lines) - 5 bearish patterns
-
-
-## Project Overview
-**Goal**: Create a modularized stocktrader bot system that downloads OHLCV data for given time periods and intervals, with modern web frontend and robust backend services.
-
 
 ### **Individual Service Development**
 ```bash
@@ -196,43 +193,7 @@ curl -X POST "http://localhost:8000/api/v1/market-data/download" \
 - **Handle file path separators correctly for Windows (use forward slashes in GitBash)**
 - **Escape spaces in file paths or use quotes when necessary**
 
-#### Pattern Detection Issues
-**Problem**: Pattern detection not working
-**Solution**:
-```bash
-# Test with sample data
-python -c "
-import pandas as pd, numpy as np
-data = pd.DataFrame({
-    'Open': [100, 101, 102], 'High': [105, 106, 107],
-    'Low': [99, 100, 101], 'Close': [104, 105, 106], 'Volume': [1000]*3
-})
-from patterns.orchestrator import CandlestickPatterns
-detector = CandlestickPatterns()
-print('Pattern detection working:', len(detector.detect_all_patterns(data)) >= 0)
-"
-```
 
-### Development Environment Setup
-
-#### Backend (FastAPI) Setup
-```bash
-cd /c/dev/stocktrader2
-python -m venv venv
-source venv/Scripts/activate
-pip install -r requirements.txt
-# Install additional FastAPI dependencies
-pip install fastapi uvicorn websockets sqlalchemy
-```
-
-#### Frontend (Next.js) Setup
-```bash
-cd /c/dev/stocktrader2
-npx create-next-app@latest frontend --typescript --tailwind --eslint --app --use-npm
-cd frontend
-npm install zustand swr @radix-ui/react-select @radix-ui/react-dialog
-npm install -D @types/node
-```
 
 #### Running the Application
 **Backend (FastAPI)**:

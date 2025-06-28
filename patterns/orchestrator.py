@@ -5,7 +5,7 @@ Main orchestrator for candlestick pattern detection.
 Manages multiple pattern detectors and provides unified interface.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor
 import threading
@@ -70,6 +70,40 @@ class CandlestickPatterns:
         
         logger.info(f"Initialized CandlestickPatterns with {len(self.detectors)} detectors")
     
+    def get_pattern_occurrences(self, df: pd.DataFrame) -> List[Dict[str, Any]]:
+        """
+        Detects all pattern occurrences and returns them as a list.
+
+        This method relies on the individual detectors populating the 
+        `detection_points` field in the PatternResult.
+
+        Args:
+            df: OHLCV DataFrame.
+
+        Returns:
+            A list of dictionaries, each representing a single pattern occurrence.
+        """
+        all_occurrences = []
+        detection_results = self.detect_all_patterns(df)
+
+        for name, result in detection_results.items():
+            if result.detected and result.detection_points:
+                for point in result.detection_points:
+                    occurrence = {
+                        "date": point.get("date"),
+                        "pattern_name": name,
+                        "confidence": result.confidence,
+                        "pattern_type": result.pattern_type.value,
+                        "description": result.description,
+                    }
+                    all_occurrences.append(occurrence)
+        
+        # Sort by date, assuming 'date' is a datetime object or string that sorts correctly
+        if all_occurrences:
+            all_occurrences.sort(key=lambda x: x['date'], reverse=True)
+            
+        return all_occurrences
+
     def detect_all_patterns(self, df: pd.DataFrame) -> Dict[str, PatternResult]:
         """
         Detect all patterns in the given DataFrame.

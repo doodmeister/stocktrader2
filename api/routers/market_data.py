@@ -24,6 +24,9 @@ from api.dependencies import (
     validate_interval,
     ensure_data_directory
 )
+from fastapi.responses import JSONResponse
+import os
+import pandas as pd
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -74,6 +77,48 @@ async def download_stock_data(
     except Exception as e:
         logger.error(f"Failed to download stock data: {e}")
         raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+
+
+@router.get("/ohlcv-json/{filename}", response_class=JSONResponse)
+async def get_ohlcv_json(filename: str):
+    """
+    Load OHLCV data from a CSV file and return it as JSON.
+    This endpoint is used by the frontend to display candlestick charts.
+    """
+    try:
+        # THIS IS A TEMPORARY HARDCODED PATH FOR DEBUGGING
+        DATA_DIR = "c:\\dev\\stocktrader2\\data\\csv"
+
+        # Securely construct the file path
+        if ".." in filename or filename.startswith("/"):
+            raise HTTPException(status_code=400, detail="Invalid filename.")
+
+        # Construct the full path using the hardcoded DATA_DIR
+        file_path = os.path.join(DATA_DIR, filename)
+        logger.info(f"Attempting to load OHLCV data from: {file_path}")
+
+        if not os.path.exists(file_path):
+            logger.error(f"File not found at path: {file_path}")
+            logger.error(f"Current working directory: {os.getcwd()}")
+            raise HTTPException(status_code=404, detail=f"CSV file not found: {filename}")
+
+        df = pd.read_csv(file_path, parse_dates=['Date'])
+        
+        # Convert 'Date' to ISO 8601 format string, handling potential NaT values
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce').dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+        # Convert DataFrame to a list of dictionaries
+        data = df.to_dict(orient='records')
+        
+        logger.info(f"Successfully loaded {len(data)} records from {filename}")
+        return JSONResponse(content=data)
+
+    except pd.errors.EmptyDataError:
+        logger.error(f"CSV file is empty: {filename}")
+        raise HTTPException(status_code=400, detail=f"CSV file is empty: {filename}")
+    except Exception as e:
+        logger.error(f"Failed to process CSV file {filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV file: {str(e)}")
 
 
 @router.post("/load-csv", response_model=LoadCSVResponse)

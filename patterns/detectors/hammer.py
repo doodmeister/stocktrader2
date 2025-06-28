@@ -28,32 +28,46 @@ class HammerPattern(PatternDetector):
     @validate_dataframe
     def detect(self, df: pd.DataFrame) -> PatternResult:
         """
-        Detect Hammer pattern with confidence scoring.
+        Detect Hammer pattern with confidence scoring across the entire DataFrame.
         
         Args:
             df: OHLCV DataFrame
             
         Returns:
-            PatternResult with detection results
+            PatternResult with all detection points
         """
-        # Get price data using normalized column access
-        price_data = self._get_price_data(df, -1)
+        detection_points = []
+        overall_detected = False
+        max_confidence = 0.0
+        max_strength = PatternStrength.WEAK
         
-        # Extract OHLC values
-        open_price = price_data.get('open', 0)
-        high_price = price_data.get('high', 0)
-        low_price = price_data.get('low', 0)
-        close_price = price_data.get('close', 0)
+        # Ensure we have a date column or index for detection points
+        date_col = None
+        if 'Date' in df.columns:
+            date_col = 'Date'
+        elif 'date' in df.columns:
+            date_col = 'date'
+        elif isinstance(df.index, pd.DatetimeIndex):
+            date_col = df.index
         
-        body = abs(close_price - open_price)
-        lower_wick = min(open_price, close_price) - low_price
-        upper_wick = high_price - max(open_price, close_price)
-        
-        if body == 0:  # Avoid division by zero
-            confidence = 0.0
-            detected = False
-            strength = PatternStrength.WEAK
-        else:
+        # Scan each row in the DataFrame
+        for i in range(len(df)):
+            # Get price data for current row
+            price_data = self._get_price_data(df, i)
+            
+            # Extract OHLC values
+            open_price = price_data.get('open', 0)
+            high_price = price_data.get('high', 0)
+            low_price = price_data.get('low', 0)
+            close_price = price_data.get('close', 0)
+            
+            body = abs(close_price - open_price)
+            lower_wick = min(open_price, close_price) - low_price
+            upper_wick = high_price - max(open_price, close_price)
+            
+            if body == 0:  # Avoid division by zero
+                continue
+                
             # Calculate confidence based on pattern quality
             lower_wick_ratio = lower_wick / body if body > 0 else 0
             upper_wick_ratio = upper_wick / body if body > 0 else 0
@@ -70,16 +84,43 @@ class HammerPattern(PatternDetector):
                 shadow_quality = max(0.0, 1.0 - upper_wick_ratio)
                 confidence = 0.5 + 0.5 * (wick_quality * 0.7 + shadow_quality * 0.3)
                 strength = self._determine_strength(confidence)
-            else:
-                confidence = 0.0
-                strength = PatternStrength.WEAK
+                
+                # Get date for this detection point
+                if date_col is not None:
+                    if isinstance(date_col, pd.Index):
+                        detection_date = str(date_col[i])
+                    else:
+                        detection_date = str(df.iloc[i][date_col])
+                else:
+                    detection_date = f"Row {i}"
+                
+                detection_points.append({
+                    'date': detection_date,
+                    'confidence': confidence,
+                    'strength': strength.name,
+                    'details': {
+                        'open': open_price,
+                        'high': high_price,
+                        'low': low_price,
+                        'close': close_price,
+                        'lower_wick_ratio': lower_wick_ratio,
+                        'upper_wick_ratio': upper_wick_ratio,
+                        'body_size': body
+                    }
+                })
+                
+                overall_detected = True
+                if confidence > max_confidence:
+                    max_confidence = confidence
+                    max_strength = strength
         
         return PatternResult(
             name=self.name,
-            detected=detected,
-            confidence=confidence,
+            detected=overall_detected,
+            confidence=max_confidence,
             pattern_type=self.pattern_type,
-            strength=strength,
+            strength=max_strength,
             description="Bullish reversal pattern with long lower shadow and small body at top",
-            min_rows_required=self.min_rows
+            min_rows_required=self.min_rows,
+            detection_points=detection_points
         )

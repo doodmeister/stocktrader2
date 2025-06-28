@@ -7,18 +7,21 @@ Focus on RSI indicator first to ensure the basic structure works.
 
 from fastapi import APIRouter, HTTPException
 from typing import Optional, Any
+import glob
+import os
 import pandas as pd
 import numpy as np
-import os
-import glob
+from datetime import datetime, timedelta
 import traceback
-from datetime import datetime
 
 # Import models from the models package
 from api.models.analysis import (
     TechnicalIndicatorRequest,
     TechnicalIndicatorResponse,
-    IndicatorResult
+    IndicatorResult,
+    PatternDetectionRequest,
+    PatternDetectionResponse,
+    DetectedPattern
 )
 
 # Core functionality imports - use core.indicators for all technical indicators
@@ -33,6 +36,10 @@ from core.indicators import (
     calculate_obv,
     calculate_adx
 )
+# Import pattern detection
+from patterns.orchestrator import CandlestickPatterns
+
+from core.data_validator import DataValidator
 
 # Import SMA/EMA from technical_indicators (they aren't in core.indicators yet)
 from core.technical_indicators import calculate_sma, calculate_ema
@@ -168,6 +175,91 @@ def _load_stock_data(symbol: str, data_source: str = "csv", csv_file_path: Optio
             status_code=500,
             detail=f"Failed to load stock data: {str(e)}"
         )
+
+
+@router.post("/pattern-detection", response_model=PatternDetectionResponse)
+async def detect_patterns(request: PatternDetectionRequest):
+    """
+    Detects candlestick patterns in stock data.
+    """
+    try:
+        logger.info(f"Processing pattern detection for {request.symbol}")
+        
+        df = _load_stock_data(
+            request.symbol,
+            request.data_source,
+            request.csv_file_path
+        )
+        
+        logger.info(f"Loaded data shape: {df.shape}, columns: {list(df.columns)}")
+
+        detector = CandlestickPatterns(confidence_threshold=request.min_confidence)
+        logger.info(f"Created detector with confidence threshold: {request.min_confidence}")
+        
+        # This method needs to be created in the orchestrator
+        # It should return a list of all occurrences
+        occurrences = detector.get_pattern_occurrences(df)
+        logger.info(f"Raw occurrences found: {len(occurrences)}")
+        
+        if occurrences:
+            logger.info(f"Sample occurrence: {occurrences[0]}")
+
+        # Filter by date if requested
+        if request.recent_only and request.lookback_days > 0:
+            cutoff_date = datetime.now() - timedelta(days=request.lookback_days)
+            occurrences = [
+                p for p in occurrences 
+                if pd.to_datetime(p['date']) > cutoff_date
+            ]
+            logger.info(f"After date filtering: {len(occurrences)} occurrences")
+
+        # Filter by pattern name if requested
+        if request.include_patterns:
+            occurrences = [
+                p for p in occurrences
+                if p['pattern_name'] in request.include_patterns
+            ]
+            logger.info(f"After pattern name filtering: {len(occurrences)} occurrences")
+
+        # Convert to DetectedPattern objects
+        try:
+            detected_patterns = [DetectedPattern(**p) for p in occurrences]
+            logger.info(f"Successfully converted {len(detected_patterns)} DetectedPattern objects")
+        except Exception as conversion_error:
+            logger.error(f"Error converting to DetectedPattern: {conversion_error}")
+            logger.error(f"Sample problematic occurrence: {occurrences[0] if occurrences else 'None'}")
+            raise
+
+        # Compute pattern summary (always include, even if empty)
+        bullish = 0
+        bearish = 0
+        neutral = 0
+        for p in detected_patterns:
+            pt = getattr(p, 'pattern_type', '').lower()
+            if 'bullish' in pt:
+                bullish += 1
+            elif 'bearish' in pt:
+                bearish += 1
+            else:
+                neutral += 1
+        pattern_summary = {
+            'total_patterns': len(detected_patterns),
+            'bullish_patterns': bullish,
+            'bearish_patterns': bearish,
+            'neutral_patterns': neutral
+        }
+
+        return PatternDetectionResponse(
+            symbol=request.symbol,
+            total_patterns_found=len(detected_patterns),
+            patterns=detected_patterns,
+            analysis_timestamp=datetime.utcnow(),
+            pattern_summary=pattern_summary
+        )
+    except Exception as e:
+        logger.error(f"Error in pattern detection for {request.symbol}: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to perform pattern detection: {e}")
 
 
 @router.post("/technical-indicators", response_model=TechnicalIndicatorResponse)
@@ -506,6 +598,7 @@ async def analyze_technical_indicators(request: TechnicalIndicatorRequest):
                     if (current_adx is not None and not np.isnan(current_adx) and 
                         current_plus_di is not None and not np.isnan(current_plus_di) and
                         current_minus_di is not None and not np.isnan(current_minus_di)):
+                        
                         if current_adx > 25:  # Strong trend
                             if current_plus_di > current_minus_di:
                                 signal = "bullish"
@@ -532,25 +625,10 @@ async def analyze_technical_indicators(request: TechnicalIndicatorRequest):
                     ))
                 
                 else:
-                    logger.warning(f"Indicator {indicator_name} not implemented")
-                    indicators.append(IndicatorResult(
-                        name=indicator_name.upper(),
-                        current_value=None,
-                        signal="neutral",
-                        strength=0.5,
-                        data=[]
-                    ))
+                    logger.warning(f"Unknown indicator: {indicator_name}")
                     
             except Exception as e:
                 logger.error(f"Error calculating {indicator_name}: {e}")
-                # Add error indicator
-                indicators.append(IndicatorResult(
-                    name=indicator_name.upper(),
-                    current_value=None,
-                    signal="neutral",
-                    strength=0.0,
-                    data=[]
-                ))
         
         # Calculate overall signal
         bullish_signals = sum(1 for ind in indicators if ind.signal == "bullish")
@@ -559,10 +637,10 @@ async def analyze_technical_indicators(request: TechnicalIndicatorRequest):
         
         if bullish_signals > bearish_signals:
             overall_signal = "bullish"
-            signal_strength = bullish_signals / total_signals
+            signal_strength = bullish_signals / total_signals if total_signals > 0 else 0.5
         elif bearish_signals > bullish_signals:
             overall_signal = "bearish"
-            signal_strength = bearish_signals / total_signals
+            signal_strength = bearish_signals / total_signals if total_signals > 0 else 0.5
         else:
             overall_signal = "neutral"
             signal_strength = 0.5
@@ -581,46 +659,21 @@ async def analyze_technical_indicators(request: TechnicalIndicatorRequest):
         raise
     except Exception as e:
         logger.error(f"Technical analysis failed: {e}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(
-            status_code=500,
-            detail=f"Technical analysis failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to perform technical analysis: {e}")
 
 
 @router.get("/test/rsi/{symbol}")
 async def test_rsi(symbol: str):
     """Simple test endpoint for RSI calculation."""
     try:
-        # Try to find a CSV file for this symbol
-        file_path = _find_symbol_csv(symbol)
-        if not file_path:
-            # Fallback to the old naming pattern
-            file_path = os.path.join(DATA_PATH, f"{symbol}.csv")
-        
-        if not os.path.exists(file_path):
-            raise HTTPException(
-                status_code=404, 
-                detail=f"CSV file not found for symbol '{symbol}'. Available files in {DATA_PATH}: {[f for f in os.listdir(DATA_PATH) if f.endswith('.csv')]}"
-            )
-        df = pd.read_csv(file_path)
-        df.columns = df.columns.str.lower().str.replace(' ', '_')
-        
-        # Calculate RSI
+        df = _load_stock_data(symbol, "csv")
         rsi_data = calculate_rsi(df, length=14)
-        
-        return {
-            "symbol": symbol,
-            "data_shape": df.shape,
-            "rsi_values": clean_nan_values(rsi_data.tail(10).tolist()),
-            "current_rsi": clean_nan_values(rsi_data.iloc[-1]) if not rsi_data.empty else None
-        }
+        return {"symbol": symbol, "rsi": clean_nan_values(rsi_data.tolist())}
     except Exception as e:
-        logger.error(f"RSI test failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now()}
