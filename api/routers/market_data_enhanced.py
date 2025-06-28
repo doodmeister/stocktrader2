@@ -6,9 +6,12 @@ the enhanced MarketDataService and existing data_downloader functionality.
 """
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import JSONResponse
 from typing import List, Dict, Any, Optional, Union
 from datetime import date, datetime, timedelta
 import logging
+import os
+import pandas as pd
 from pydantic import BaseModel
 
 from api.models.market_data import LoadCSVRequest, LoadCSVResponse
@@ -356,3 +359,68 @@ async def load_csv_data(request: LoadCSVRequest) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Failed to load CSV data: {e}")
         raise HTTPException(status_code=500, detail=f"CSV loading failed: {str(e)}")
+
+
+@router.get("/ohlcv-json/{filename}", response_class=JSONResponse)
+async def get_ohlcv_json(filename: str):
+    """
+    Load OHLCV data from a CSV file and return it as JSON.
+    This endpoint is used by the frontend to display candlestick charts.
+    """
+    try:
+        # Determine the project root directory by navigating up from the current file.
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        DATA_DIR = os.path.join(project_root, "data", "csv")
+
+        # Securely construct the file path
+        if ".." in filename or filename.startswith("/"):
+            raise HTTPException(status_code=400, detail="Invalid filename.")
+
+        # Construct the full path using the dynamically determined DATA_DIR
+        file_path = os.path.join(DATA_DIR, filename)
+        logger.info(f"Project root: {project_root}")
+        logger.info(f"DATA_DIR: {DATA_DIR}")
+        logger.info(f"Attempting to load OHLCV data from: {file_path}")
+        logger.info(f"File exists check: {os.path.exists(file_path)}")
+
+        if not os.path.exists(file_path):
+            logger.error(f"File not found at path: {file_path}")
+            logger.error(f"Current working directory: {os.getcwd()}")
+            logger.error(f"Directory contents of DATA_DIR: {os.listdir(DATA_DIR) if os.path.exists(DATA_DIR) else 'DATA_DIR does not exist'}")
+            raise HTTPException(status_code=404, detail=f"CSV file not found: {filename}")
+
+        df = pd.read_csv(file_path)
+        
+        # Handle different possible date column names (case-insensitive)
+        date_column = None
+        for col in df.columns:
+            if col.lower() in ['date', 'datetime', 'timestamp']:
+                date_column = col
+                break
+        
+        if date_column is None:
+            raise HTTPException(status_code=400, detail="No date column found in CSV file")
+        
+        # Parse dates and rename to 'date' for consistency
+        df['date'] = pd.to_datetime(df[date_column], errors='coerce')
+        if date_column != 'date':
+            df = df.drop(columns=[date_column])
+        
+        # Convert date to ISO 8601 format string, handling potential NaT values
+        df['date'] = df['date'].dt.strftime('%Y-%m-%dT%H:%M:%S')
+        
+        # Ensure column names are lowercase for consistency
+        df.columns = [col.lower() for col in df.columns]
+
+        # Convert DataFrame to a list of dictionaries
+        data = df.to_dict(orient='records')
+        
+        logger.info(f"Successfully loaded {len(data)} records from {filename}")
+        return JSONResponse(content=data)
+
+    except pd.errors.EmptyDataError:
+        logger.error(f"CSV file is empty: {filename}")
+        raise HTTPException(status_code=400, detail=f"CSV file is empty: {filename}")
+    except Exception as e:
+        logger.error(f"Failed to process CSV file {filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to process CSV file: {str(e)}")
