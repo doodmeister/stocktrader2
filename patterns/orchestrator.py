@@ -92,9 +92,13 @@ class CandlestickPatterns:
                     occurrence = {
                         "date": point.get("date"),
                         "pattern_name": name,
+                        "name": result.name,  # for frontend compatibility
+                        "signal": result.pattern_type.value,  # for frontend compatibility
                         "confidence": result.confidence,
                         "pattern_type": result.pattern_type.value,
                         "description": result.description,
+                        # Try to provide start_index if available in detection point
+                        "start_index": point.get("start_index") if "start_index" in point else None
                     }
                     all_occurrences.append(occurrence)
         

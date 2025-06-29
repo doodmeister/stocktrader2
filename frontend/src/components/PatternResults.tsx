@@ -48,6 +48,8 @@ export default function PatternResults({ results, csvFilePath }: PatternResultsP
         )
     }
 
+    console.log('Pattern table data:', results.patterns);
+
     return (
         <div className="trading-card">
             <h2 className="text-lg font-semibold mb-4">Pattern Detection Results for {results.symbol}</h2>
@@ -72,15 +74,17 @@ export default function PatternResults({ results, csvFilePath }: PatternResultsP
                             <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Pattern Name</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Type</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Confidence</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
                         </tr>
                     </thead>
                     <tbody className="bg-background divide-y divide-border">
                         {results.patterns.map((pattern, index) => (
                             <tr key={index}>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm">{pattern.start_index}</td>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{pattern.name}</td>
-                                <td className="px-4 py-2 whitespace-nowrap text-sm">{pattern.signal}</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm">{pattern.start_index !== undefined && pattern.start_index !== null ? pattern.start_index : <span className="text-muted-foreground italic">N/A</span>}</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">{pattern.pattern_name || pattern.name}</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm">{pattern.pattern_type || pattern.signal}</td>
                                 <td className="px-4 py-2 whitespace-nowrap text-sm">{(pattern.confidence * 100).toFixed(1)}%</td>
+                                <td className="px-4 py-2 whitespace-nowrap text-sm">{pattern.date ? new Date(pattern.date).toLocaleString() : '-'}</td>
                             </tr>
                         ))}
                     </tbody>

@@ -29,26 +29,42 @@ interface PatternChartProps {
   patterns: PatternResult[];
 }
 
-const markerPath = {
-  bullish: 'M0,0 L10,0 L5,-10 Z', // triangle up
-  bearish: 'M0,0 L10,0 L5,10 Z', // triangle down
-  neutral: 'M0,0 L10,0 L5,-5 L0,0 Z', // diamond
-};
+// Use a single color and marker path for all detected patterns
+const markerColor = '#2563eb'; // blue
+const markerPath = 'M0,0 L10,0 L5,-10 Z'; // triangle up
 
-const markerColor = {
-  bullish: '#16a34a',
-  bearish: '#dc2626',
-  neutral: '#facc15',
-};
-
-function getPatternType(signal: string) {
-  if (signal.toLowerCase().includes('bullish')) return 'bullish';
-  if (signal.toLowerCase().includes('bearish')) return 'bearish';
-  return 'neutral';
-}
-
+// Move PatternMarkerAnnotation above PatternChart
 function PatternMarkerAnnotation(props: any) {
-  return <SvgPathAnnotation {...props} />;
+  // Make marker larger and more visible, and add a label above
+  return (
+    <g>
+      {/* Pattern label above marker */}
+      {props.x !== undefined && props.y !== undefined && props.tooltip && (
+        <text
+          x={props.x}
+          y={props.y - 12}
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="bold"
+          fill={props.fill}
+          stroke="#fff"
+          strokeWidth={0.5}
+          paintOrder="stroke"
+        >
+          {props.tooltip.split('(')[0].trim()}
+        </text>
+      )}
+      <SvgPathAnnotation
+        {...props}
+        strokeWidth={2}
+        opacity={0.95}
+      />
+      {/* Debug: show a small circle at the marker position */}
+      {props.x !== undefined && props.y !== undefined && (
+        <circle cx={props.x} cy={props.y} r={6} fill={props.fill} opacity={0.4} />
+      )}
+    </g>
+  );
 }
 
 export function PatternChart({ ohlcv, patterns }: PatternChartProps) {
@@ -59,22 +75,41 @@ export function PatternChart({ ohlcv, patterns }: PatternChartProps) {
     date: d.date instanceof Date ? d.date : new Date(d.date),
   }));
 
+  // Build a map from date string to candle for fast lookup
+  const candleByDate: Record<string, OHLCV> = {};
+  data.forEach((d, idx) => {
+    // Use ISO string for robust matching
+    candleByDate[d.date.toISOString()] = d;
+  });
+
+  // Try to match patterns by date (prefer pattern.date, fallback to start_index)
   const annotations = patterns.map(pattern => {
-    const type = getPatternType(pattern.signal || pattern.name || '');
-    const candleIdx = pattern.start_index ?? 0;
-    const candle = data[candleIdx];
-    return candle && candle.date ? {
-      x: candle.date,
-      type,
-      name: pattern.name,
-      confidence: pattern.confidence,
-    } : null;
+    // Prefer pattern.date if available, else fallback to start_index
+    const patternDate = (pattern as any).date ? new Date((pattern as any).date) : null;
+    let candle: OHLCV | undefined;
+    if (patternDate && !isNaN(patternDate.getTime())) {
+      candle = candleByDate[patternDate.toISOString()];
+    } else if (typeof pattern.start_index === 'number') {
+      candle = data[pattern.start_index];
+    }
+    // Defensive: only return annotation if candle and candle.high are valid numbers
+    if (candle && candle.date && typeof candle.high === 'number' && !isNaN(candle.high)) {
+      return {
+        x: candle.date,
+        name: pattern.name,
+        confidence: pattern.confidence,
+      };
+    }
+    return null;
   }).filter(Boolean) as Array<{
     x: Date;
-    type: keyof typeof markerColor;
     name: string;
     confidence: number;
   }>;
+
+  // Only show candles where a pattern is detected
+  const patternDates = new Set(annotations.map(a => a.x.getTime()));
+  const filteredData = data.filter(d => patternDates.has(d.date.getTime()) && typeof d.high === 'number' && !isNaN(d.high));
 
   const width = 800;
 
@@ -86,7 +121,7 @@ export function PatternChart({ ohlcv, patterns }: PatternChartProps) {
         ratio={1}
         margin={{ left: 50, right: 50, top: 10, bottom: 30 }}
         seriesName="PatternChart"
-        data={data}
+        data={filteredData}
         xAccessor={(d: OHLCV) => d.date}
         xScale={scaleTime() as any}
         displayXAccessor={(d: OHLCV) => d.date}
@@ -99,12 +134,12 @@ export function PatternChart({ ohlcv, patterns }: PatternChartProps) {
             <Annotate
               key={i}
               with={PatternMarkerAnnotation}
-              when={(d: OHLCV) => d.date && a.x && d.date.getTime() === a.x.getTime()}
+              when={(d: OHLCV) => d.date && a.x && d.date instanceof Date && a.x instanceof Date && d.date.getTime() === a.x.getTime() && typeof d.high === 'number' && !isNaN(d.high)}
               usingProps={{
-                y: ({ yScale, datum }: any) => yScale(datum.high) - 10,
-                fill: markerColor[a.type],
-                stroke: markerColor[a.type],
-                path: markerPath[a.type],
+                y: ({ yScale, datum }: any) => typeof datum.high === 'number' && !isNaN(datum.high) ? yScale(datum.high) - 20 : 0, // move marker higher above candle
+                fill: markerColor,
+                stroke: markerColor,
+                path: () => markerPath,
                 tooltip: `${a.name} (${(a.confidence * 100).toFixed(1)}%)`,
               }}
             />

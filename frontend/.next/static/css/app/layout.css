@@ -682,6 +682,9 @@ video {
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
   --tw-ring-offset-width: 2px;
 }
+.visible {
+  visibility: visible;
+}
 .absolute {
   position: absolute;
 }
@@ -1102,6 +1105,9 @@ video {
 }
 .capitalize {
   text-transform: capitalize;
+}
+.italic {
+  font-style: italic;
 }
 .tracking-wider {
   letter-spacing: 0.05em;
