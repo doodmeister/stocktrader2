@@ -21,8 +21,11 @@ Full-stack system successfully modernized and operational:
 ### **Start the Complete System**
 ```bash
 cd /c/dev/stocktrader2
-source venv/Scripts/activate  # Activate Python environment
-npm run dev                   # Start both frontend and backend
+python -m venv venv #(python 3.12.0)
+ source venv/Scripts/activate  # Activate Python environment
+ pip install uv
+ uv pip install -r requirements.txt  # Install Python dependencies
+ npm run dev                   # Start both frontend and backend
 ```
 
 ### **Individual Services**
