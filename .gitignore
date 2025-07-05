@@ -29,6 +29,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.whl
 
 # Installer logs
 pip-log.txt
@@ -72,6 +73,8 @@ build-env/
 .idea/
 .vscode/
 *.code-workspace
+.vscode-server/
+.vscode-test/
 
 # OS files
 .DS_Store
@@ -102,3 +105,10 @@ pip-selfcheck.json
 # Temp files
 *.json
 *~
+frontend/.next/
+frontend/out/
+npm-debug.log*
+
+# Backup and temporary files
+*.bak
+*.tmp
