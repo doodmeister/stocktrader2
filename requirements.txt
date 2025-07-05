@@ -68,6 +68,7 @@ mypy>=1.5.0
 typing-extensions>=4.7.0
 python-dateutil>=2.8.0
 pytz>=2023.3
+jsonschema>=4.24.0
 
 # ===== E*TRADE API INTEGRATION =====
 # Note: E*TRADE uses OAuth1 which is covered by requests-oauthlib above
