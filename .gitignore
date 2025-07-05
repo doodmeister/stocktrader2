@@ -89,7 +89,7 @@ Thumbs.db
 model_training.log
 
 # Models
-models/
+
 
 # Data files / large artifacts
 data/

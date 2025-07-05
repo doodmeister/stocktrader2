@@ -25,8 +25,12 @@ python -m venv venv #(python 3.12.0)
  source venv/Scripts/activate  # Activate Python environment
  pip install uv
  uv pip install -r requirements.txt  # Install Python dependencies
- npm run dev                   # Start both frontend and backend
 ```
+## Node JS
+For Windows, download node-v22.16.0-x64.msi and install it.
+
+## Start the Frontend and Backend
+ npm run dev                   # Start both frontend and backend
 
 ### **Individual Services**
 ```bash
@@ -260,31 +264,6 @@ print('✅ All core modules operational!')
 - **Error Handling**: Clear error messages and recovery suggestions
 - **Data Validation**: Real-time form validation
 - **Progress Indicators**: Download progress and analysis status
-
-## 🚦 Development Workflow
-
-### Backend Development
-```bash
-# Start backend development server
-cd /c/dev/stocktrader2
-source venv/Scripts/activate
-npm run dev:backend
-```
-
-### Frontend Development
-```bash
-# Start frontend development server
-cd /c/dev/stocktrader2
-npm run dev:frontend
-```
-
-### Full-Stack Development
-```bash
-# Start both services concurrently
-npm run dev
-```
-
-## 📦 Dependencies
 
 ### Backend (Python)
 - **FastAPI**: Modern web framework with automatic API documentation
@@ -842,100 +821,6 @@ stocktrader2/
 5. **Frontend** receives updates and updates the UI reactively
 6. **Trading Engine** processes signals and executes trades via E*TRADE API
 
-## 🧪 Testing
-
-### Backend Testing
-```bash
-# Run Python tests
-pytest tests/api/ -v
-pytest tests/core/ -v
-```
-
-### Frontend Testing
-```bash
-# Run React component tests
-cd frontend
-npm test
-```
-
-### Integration Testing
-```bash
-# Run end-to-end tests
-pytest tests/integration/ -v
-```
-
-## 🔍 System Verification & Troubleshooting
-
-### Core Module Verification
-Run this command to verify all core modules are properly functioning:
-
-```bash
-# Navigate to project root and test all imports
-cd /c/dev/stocktrader2
-python -c "
-print('🔍 Testing core module imports...')
-
-# Test data validation functions
-from core.data_validator import validate_file_path, validate_dataframe
-print('✅ Data validator: standalone functions imported')
-
-# Test ML training components
-from train.deeplearning_trainer import PatternModelTrainer
-from train.feature_engineering import compute_technical_features, add_candlestick_pattern_features
-print('✅ ML pipeline: trainer and feature engineering imported')
-
-# Test security framework
-from security.authentication import create_jwt_token, get_api_credentials
-from security.authorization import create_user_context, Role
-from security.etrade_security import create_etrade_manager
-print('✅ Security framework: JWT, authorization, E*TRADE integration imported')
-
-# Test pattern detection system
-from patterns.factory import create_pattern_detector
-from patterns.orchestrator import CandlestickPatterns
-print('✅ Pattern detection: orchestrator and factory imported')
-
-# Test technical indicators
-from core.indicators import RSIIndicator, MACDIndicator, BollingerBandsIndicator
-print('✅ Technical indicators: all indicator modules imported')
-
-print('\\n🎉 All core modules operational - System ready for development!')
-"
-```
-
-### Individual Component Testing
-```bash
-# Test specific components individually
-python -c "
-import pandas as pd
-import numpy as np
-
-# Create sample OHLCV data for testing
-dates = pd.date_range('2024-01-01', periods=100, freq='D')
-data = pd.DataFrame({
-    'Open': np.random.uniform(100, 110, 100),
-    'High': np.random.uniform(105, 115, 100),
-    'Low': np.random.uniform(95, 105, 100),
-    'Close': np.random.uniform(100, 110, 100),
-    'Volume': np.random.randint(1000, 10000, 100)
-}, index=dates)
-
-# Test pattern detection
-from patterns.orchestrator import CandlestickPatterns
-detector = CandlestickPatterns()
-results = detector.detect_all_patterns(data)
-print(f'✅ Pattern detection: Found {len(results)} pattern matches')
-
-# Test technical indicators  
-from core.technical_indicators import TechnicalIndicators
-ti = TechnicalIndicators(data)
-rsi = ti.calculate_rsi()
-print(f'✅ Technical indicators: RSI calculated for {len(rsi)} periods')
-
-print('\\n🎉 Component testing completed successfully!')
-"
-```
-
 ### Common Issues & Solutions
 
 #### Import Errors
@@ -970,15 +855,6 @@ The FastAPI backend automatically generates interactive API documentation:
 - **ReDoc**: http://localhost:8000/redoc
 - **OpenAPI Schema**: http://localhost:8000/openapi.json
 
-## 🚀 Deployment
-
-### Development
-- Backend: `uvicorn api.main:app --reload`
-- Frontend: `npm run dev`
-
-### Production
-- Backend: `uvicorn api.main:app --host 0.0.0.0 --port 8000`
-- Frontend: `npm run build && npm start`
 
 ## 🔒 Security Features
 
@@ -1044,7 +920,6 @@ For questions, issues, or feature requests:
 
 ### Common Issues
 
-**Hydration Warnings**: Browser extensions (like Grammarly) can cause hydration mismatches. These are harmless and don't affect functionality.
 
 **Chart Not Displaying**: 
 - Ensure sufficient data points for indicators (RSI: 14, MACD: 35, Bollinger Bands: 20)
@@ -1056,27 +931,6 @@ For questions, issues, or feature requests:
 - Check that the symbol exists and has recent trading data
 - Review API logs for specific error details
 
-### Debug Commands
-```bash
-# Check data availability
-python -c "
-from api.routers.analysis import _load_stock_data
-import asyncio
-data = asyncio.run(_load_stock_data('AAPL'))
-print(f'Rows: {len(data)}, Columns: {list(data.columns)}')
-"
-
-# Test technical indicators
-python -c "
-from core.technical_indicators import TechnicalIndicators
-import pandas as pd, numpy as np
-data = pd.DataFrame({
-    'Close': np.random.uniform(100, 110, 30)
-})
-ti = TechnicalIndicators(data)
-print('RSI:', ti.calculate_rsi().iloc[-1])
-"
-```
 
 ## 🚀 Production Deployment
 
