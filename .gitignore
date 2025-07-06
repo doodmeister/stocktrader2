@@ -110,3 +110,4 @@ npm-debug.log*
 # Backup and temporary files
 *.bak
 *.tmp
+frontend/.next/trace
