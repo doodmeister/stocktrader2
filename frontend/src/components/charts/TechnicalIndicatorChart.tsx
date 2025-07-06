@@ -229,11 +229,28 @@ export default function TechnicalIndicatorChart({
           </span>
           {indicator.current_value !== undefined && indicator.current_value !== null && (
             <span className="text-xs text-muted-foreground">
-              Current: {typeof indicator.current_value === 'number' 
-                ? config.formatValue(indicator.current_value)
-                : typeof indicator.current_value === 'object' 
-                ? JSON.stringify(indicator.current_value)
-                : String(indicator.current_value)}
+              Current: {(() => {
+                if (typeof indicator.current_value === 'number') {
+                  return config.formatValue(indicator.current_value)
+                } else if (typeof indicator.current_value === 'object' && indicator.current_value !== null) {
+                  // For multi-value indicators, show only the most relevant value
+                  if (isBollingerBands) {
+                    return `Price: ${config.formatValue(indicator.current_value.current_price)}`
+                  } else if (isMACD) {
+                    return `MACD: ${config.formatValue(indicator.current_value.macd)}`
+                  } else if (isStochastic) {
+                    return `%K: ${config.formatValue(indicator.current_value.k)}`
+                  } else if (isADX) {
+                    return `ADX: ${config.formatValue(indicator.current_value.adx)}`
+                  } else {
+                    // fallback: show first key/value
+                    const key = Object.keys(indicator.current_value)[0]
+                    return `${key}: ${config.formatValue(indicator.current_value[key])}`
+                  }
+                } else {
+                  return String(indicator.current_value)
+                }
+              })()}
             </span>
           )}
         </div>

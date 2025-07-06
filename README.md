@@ -28,6 +28,7 @@ python -m venv venv #(python 3.12.0)
 ```
 ## Node JS
 For Windows, download node-v22.16.0-x64.msi and install it.
+Node.js and NPM must be in your path. 
 
 ## Start the Frontend and Backend
  npm run dev                   # Start both frontend and backend

@@ -183,7 +183,7 @@ async def detect_patterns(request: PatternDetectionRequest):
     Detects candlestick patterns in stock data.
     """
     try:
-        logger.info(f"Processing pattern detection for {request.symbol}")
+        logger.info(f"Received pattern detection request: {request.model_dump_json(indent=2)}")
         
         df = _load_stock_data(
             request.symbol,
@@ -204,14 +204,24 @@ async def detect_patterns(request: PatternDetectionRequest):
         if occurrences:
             logger.info(f"Sample occurrence: {occurrences[0]}")
 
-        # Filter by date if requested
-        if request.recent_only and request.lookback_days > 0:
-            cutoff_date = datetime.now() - timedelta(days=request.lookback_days)
-            occurrences = [
-                p for p in occurrences 
-                if pd.to_datetime(p['date']) > cutoff_date
-            ]
-            logger.info(f"After date filtering: {len(occurrences)} occurrences")
+        # Filter by date if requested, but NOT for CSV data source
+        if request.data_source != 'csv' and request.recent_only and request.lookback_days > 0:
+            logger.info(f"Applying date filter for the last {request.lookback_days} days.")
+            # Ensure the date column is in datetime format for comparison
+            try:
+                # Assuming 'date' is a string 'YYYY-MM-DD' or similar
+                cutoff_date = datetime.now() - timedelta(days=request.lookback_days)
+                occurrences = [
+                    p for p in occurrences 
+                    if pd.to_datetime(p['date']) >= cutoff_date
+                ]
+                logger.info(f"After date filtering: {len(occurrences)} occurrences")
+            except Exception as e:
+                logger.error(f"Error during date filtering: {e}. Skipping.")
+        elif request.data_source == 'csv':
+            logger.info("Skipping date filtering because data source is CSV.")
+        else:
+            logger.info("No date filtering applied (recent_only=False or lookback_days=0).")
 
         # Filter by pattern name if requested
         if request.include_patterns:
