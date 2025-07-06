@@ -103,7 +103,6 @@ pip-selfcheck.json
 .python-version
 
 # Temp files
-*.json
 *~
 frontend/.next/
 frontend/out/

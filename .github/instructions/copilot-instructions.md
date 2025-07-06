@@ -168,7 +168,7 @@ curl -X POST "http://localhost:8000/api/v1/market-data/download" \
 
 ## Environment & Platform Standards
 - **Python Version**: 3.12 (Backend)
-- **Node.js Version**: 18+ (Frontend)
+- **Node.js Version**: 24.2.0 (Frontend) #this will have to be downloaded and installed manuallyuv -
 - **Package Manager**: `uv` (Python), `npm`/`pnpm` (Node.js)
 - **Linter**: `ruff` (Python), `eslint` (TypeScript)
 
