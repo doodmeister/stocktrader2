@@ -86,6 +86,7 @@ class DetectedPattern(BaseModel):
     confidence: float = Field(..., description="Confidence score of the detection.")
     pattern_type: str = Field(..., description="Type of pattern (e.g., bullish_reversal).")
     description: str = Field(..., description="Description of the pattern.")
+    start_index: int = Field(..., description="The start index of the detected pattern in the OHLCV data.")
 
 
 class PatternDetectionResponse(BaseModel):

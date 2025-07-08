@@ -52,6 +52,7 @@ htmlcov/
 *.pot
 
 # Virtual environments
+*venv*
 .env
 .venv/
 env/

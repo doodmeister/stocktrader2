@@ -91,6 +91,7 @@ class DojiPattern(PatternDetector):
                     'date': detection_date,
                     'confidence': confidence,
                     'strength': strength.name,
+                    'start_index': i,
                     'details': {
                         'open': open_price,
                         'high': high_price,
