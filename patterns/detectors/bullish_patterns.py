@@ -84,6 +84,7 @@ class PiercingPattern(PatternDetector):
                     'date': detection_date,
                     'confidence': confidence,
                     'strength': strength.name,
+                    'start_index': i,
                     'details': {
                         'prev_candle': {
                             'open': prev_data['open'],

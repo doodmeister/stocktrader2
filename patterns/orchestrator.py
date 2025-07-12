@@ -89,6 +89,10 @@ class CandlestickPatterns:
         for name, result in detection_results.items():
             if result.detected and result.detection_points:
                 for point in result.detection_points:
+                    # Always set start_index to a dummy value if missing or None
+                    start_index = point.get("start_index")
+                    if start_index is None:
+                        start_index = -99999  # Obvious dummy value for missing index
                     occurrence = {
                         "date": point.get("date"),
                         "pattern_name": name,
@@ -97,8 +101,7 @@ class CandlestickPatterns:
                         "confidence": result.confidence,
                         "pattern_type": result.pattern_type.value,
                         "description": result.description,
-                        # Try to provide start_index if available in detection point
-                        "start_index": point.get("start_index") if "start_index" in point else None
+                        "start_index": start_index
                     }
                     all_occurrences.append(occurrence)
         

@@ -101,6 +101,7 @@ class BullishEngulfingPattern(PatternDetector):
                     'date': detection_date,
                     'confidence': confidence,
                     'strength': strength.name,
+                    'start_index': i,
                     'details': {
                         'first_candle': {
                             'open': first_data['open'],
